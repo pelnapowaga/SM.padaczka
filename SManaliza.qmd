@@ -106,15 +106,3 @@ view(DF_SM_3)
 
 ```
 
-You can add options to executable code like this
-
-a = 4 b = 9
-
-if (a == b) { print (1) } else { print (0) }
-
-```{r}
-#| echo: false
-2 * 2
-```
-
-The `echo: false` option disables the printing of code (only output is displayed).
