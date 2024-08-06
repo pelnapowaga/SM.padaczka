@@ -25,8 +25,7 @@ KWESTIONARIUSZ_SM_PADACZKA <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_SM-PAD
 View(KWESTIONARIUSZ_SM_PADACZKA)
 
 
-
-#wybranie zmiennych z baz danych 
+## wybranie zmiennych z baz danych 
 
 SM<-KWESTIONARIUSZ_SM %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
