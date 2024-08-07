@@ -126,14 +126,15 @@ alpha(DF_SM_2 %>%
 
 library(nFactors)
 library(GPArotation)
+library(psych)
 
-answers <- DF_SM_2 %>% 
+answers_A <- DF_SM_2 %>% 
   select(starts_with("QA"))
 
-Korelacja <- cor(answers,
+Korelacja <- cor(answers_A,
                  method = "spearman",
                  use = "pairwise.complete.obs")
-ev_Dane <- eigen(Korelacja) #wartości własne macierzy korelacji i własności własne współczynników korelacji? (algebra liniowa)
+ev_Dane <- eigen(Korelacja) 
 ap_Dane <- parallel(subject=nrow(answers),
                     var=ncol(answers),
                     rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
@@ -141,14 +142,35 @@ nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji
                   aparallel = ap_Dane$eigen$qevpea) 
 plotnScree(nS_Dane)
 
+#macież korelacji
+cor_answers_A<-cor(answers_A, method = "spearman")
+View(cor_answers_A) 
 
-answers <- DF_SM_2 %>% 
+sum(cor(cor_answers_A)<0.3)/length(cor_answers_A-14)*100 #77% korelacji jest poniżej 0.3
+(sum(cor(cor_answers_A)>0.9)-14)/length(cor_answers_A-14)*100 #nie ma żadnej korelacji powyżej 0.9
+
+#wyznacznik macierzy korelacji
+det(cor(answers_A)) #0.009155857
+
+#kryterium KMO
+KMO(cor(answers_A))
+
+#czy macierz jest macierzą identycznościową
+cortest.bartlett(cor(answers_A)) #H0: macierz korelacji jest identycznościowa - dane nie mają ze sobą nic wspólnego; mamy podstawy do orzucenia H0
+
+#właściwa EFA
+fit_1<-fa(r = answers_A, nfactors = 2, rotate = "varimax")
+print(fit_1)
+
+#---
+
+answers_B <- DF_SM_2 %>% 
   select(starts_with("QB"))
 
-Korelacja <- cor(answers,
+Korelacja <- cor(answers_B,
                  method = "spearman",
                  use = "pairwise.complete.obs")
-ev_Dane <- eigen(Korelacja) #wartości własne macierzy korelacji i własności własne współczynników korelacji? (algebra liniowa)
+ev_Dane <- eigen(Korelacja) 
 ap_Dane <- parallel(subject=nrow(answers),
                     var=ncol(answers),
                     rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
@@ -156,23 +178,28 @@ nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji
                   aparallel = ap_Dane$eigen$qevpea) 
 plotnScree(nS_Dane)
 
+#macież korelacji
+cor_answers_B<-cor(answers_B, method = "spearman")
+View(cor_answers_B) 
+
+sum(cor(cor_answers_B)<0.3)/length(cor_answers_B-14)*100 #80% korelacji jest poniżej 0.3
+(sum(cor(cor_answers_B)>0.9)-14)/length(cor_answers_B-14)*100 #nie ma żadnej korelacji powyżej 0.9
+
+#wyznacznik macierzy korelacji
+det(cor(answers_B)) #0.02040104
+
+#kryterium KMO
+KMO(cor(answers_B)) 
+
+#czy macierz jest macierzą identycznościową
+cortest.bartlett(cor(answers_B)) #H0: macierz korelacji jest identycznościowa - dane nie mają ze sobą nic wspólnego; mamy podstawy do orzucenia H0
+
+#właściwa EFA
+fit_2<-fa(r = answers_B, nfactors = 1, rotate = "varimax")
+print(fit_2)
 
 
-answers <- DF_SM_2 %>% 
-  select(starts_with(c("QA","QB")))
-
-Korelacja <- cor(answers,
-                 method = "spearman",
-                 use = "pairwise.complete.obs")
-ev_Dane <- eigen(Korelacja) #wartości własne macierzy korelacji i własności własne współczynników korelacji? (algebra liniowa)
-ap_Dane <- parallel(subject=nrow(answers),
-                    var=ncol(answers),
-                    rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
-nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji 
-                  aparallel = ap_Dane$eigen$qevpea) 
-plotnScree(nS_Dane)
-
-#dla QA optymalne są dwa czynniki, a dla QB optymalny jest 1 czynnik; dla połączonej bazy robi się dziwnie
+#dla QA optymalne są dwa czynniki, a dla QB optymalny jest 1 czynnik
 
 ```
 
@@ -285,7 +312,7 @@ shapiro.test(ANOVA_warunek $residuals) #rozkłąd błędów jest normalny
 plot(ANOVA_warunek , which = 1)
   
 
-#założenia wszędzie wydają się spełniają (?)
+#założenia wszędzie wydają się spełnione (?)
 
 ```
 
