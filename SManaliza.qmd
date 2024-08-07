@@ -29,13 +29,17 @@ View(KWESTIONARIUSZ_SM_PADACZKA)
 #wybranie zmiennych z baz danych 
 
 SM<-KWESTIONARIUSZ_SM %>% 
-  select(wiek, plec, narodowosc,starts_with(c("D","Q")))
+  select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
+  mutate(warunek = "SM")
 
 PA_SM<-KWESTIONARIUSZ_PADACZKA_SM %>% 
-  select(wiek, plec, narodowosc,starts_with(c("D","Q")))
+  select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
+  mutate(warunek = "PA_SM")
 
 SM_PA<-KWESTIONARIUSZ_SM_PADACZKA %>% 
-  select(wiek, plec, narodowosc,starts_with(c("D","Q")))
+  select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
+  mutate(warunek = "SM_PA")
+
 
 #stwirzenie caej bazy danych dla SM; uzyskalismy baze danych z 37 zmiennymi dla 509 obserwacji
 DF_SM<-rbind(SM, PA_SM, SM_PA)
@@ -101,8 +105,202 @@ DF_SM_3 <- DF_SM_2 %>%
            rowSums) %>% 
   select(-starts_with(c("QA", "QB")))
 
-view(DF_SM_3)
+```
+
+## Rzetelność kwestionariusza 
+
+```{r}
+library(psych)
+
+alpha(DF_SM_2 %>% 
+  select(starts_with("QA")))
+
+# raw_alpha = 0.8730171, dobra rzetelność
 
 
 ```
 
+## Trafność kwestionariusza - EFA 
+
+```{r}
+
+library(nFactors)
+library(GPArotation)
+
+answers <- DF_SM_2 %>% 
+  select(starts_with("QA"))
+
+Korelacja <- cor(answers,
+                 method = "spearman",
+                 use = "pairwise.complete.obs")
+ev_Dane <- eigen(Korelacja) #wartości własne macierzy korelacji i własności własne współczynników korelacji? (algebra liniowa)
+ap_Dane <- parallel(subject=nrow(answers),
+                    var=ncol(answers),
+                    rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
+nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji 
+                  aparallel = ap_Dane$eigen$qevpea) 
+plotnScree(nS_Dane)
+
+
+answers <- DF_SM_2 %>% 
+  select(starts_with("QB"))
+
+Korelacja <- cor(answers,
+                 method = "spearman",
+                 use = "pairwise.complete.obs")
+ev_Dane <- eigen(Korelacja) #wartości własne macierzy korelacji i własności własne współczynników korelacji? (algebra liniowa)
+ap_Dane <- parallel(subject=nrow(answers),
+                    var=ncol(answers),
+                    rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
+nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji 
+                  aparallel = ap_Dane$eigen$qevpea) 
+plotnScree(nS_Dane)
+
+
+
+answers <- DF_SM_2 %>% 
+  select(starts_with(c("QA","QB")))
+
+Korelacja <- cor(answers,
+                 method = "spearman",
+                 use = "pairwise.complete.obs")
+ev_Dane <- eigen(Korelacja) #wartości własne macierzy korelacji i własności własne współczynników korelacji? (algebra liniowa)
+ap_Dane <- parallel(subject=nrow(answers),
+                    var=ncol(answers),
+                    rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
+nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji 
+                  aparallel = ap_Dane$eigen$qevpea) 
+plotnScree(nS_Dane)
+
+#dla QA optymalne są dwa czynniki, a dla QB optymalny jest 1 czynnik; dla połączonej bazy robi się dziwnie
+
+```
+
+## wykres gęstości wyników: pre-test/re-test + płeć + demografia 
+```{r}
+
+ggplot_df <- DF_SM_3 %>% 
+  select(plec, D4, SUM_A, SUM_B, warunek) %>%
+  mutate(A = SUM_A, B = SUM_B) %>% 
+  pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik")
+
+# gęstość całkowika
+
+ggplot(ggplot_df, aes(x = wynik)) + 
+  geom_density(aes(color = test)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  ylab("gęstość") 
+
+
+# gęstość w podziale na płeć 
+
+ggplot(ggplot_df, aes(x = wynik)) + 
+  geom_density(aes(color = test)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  ylab("gęstość") +
+  facet_wrap(vars(plec))
+
+# gęstość w podziale na miejsce zamieszkania
+
+ggplot(ggplot_df, aes(x = wynik)) + 
+  geom_density(aes(color = test)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  ylab("gęstość") +
+  facet_wrap(vars(D4))
+
+```
+
+## ANOVA 
+
+```{r}
+
+pivot_df <- DF_SM_3 %>% 
+  select(plec, D4, SUM_A, SUM_B, warunek) %>%
+  mutate(A = SUM_A, B = SUM_B) %>% 
+  pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik")
+
+view(pivot_df)
+table(DF_SM_3$plec) #czy usuwamy plec "inna"??
+
+
+#two-way ANOVA 
+#zmienne niezależne lekcja i płeć
+#zmienna zależna wynik testu
+
+ggplot(pivot_df, aes(x = test, y = wynik)) + 
+  geom_boxplot(aes(color = plec)) +
+  theme_bw() + 
+  theme(legend.position="bottom")
+
+#włąściwa ANOVA
+
+ANOVA_plec<- aov(wynik ~ test + plec, data = pivot_df)
+summary(ANOVA_plec)
+
+#założenia - przeanalizować
+
+shapiro.test(ANOVA_plec$residuals) #rozkłąd błędów jest normalny
+plot(ANOVA_plec, which = 1)
+
+#z metodologii wziąć efekt główny, prosty i całkowity 
+
+#two-way ANOVA 
+#zmienne niezależne: lekcja i miejsce zamieszkania
+#zmienna zależna wynik testu 
+ggplot(pivot_df, aes(x = test, y = wynik)) + 
+  geom_boxplot(aes(color = D4)) +
+  theme_bw() +
+  theme(legend.position="bottom")
+
+#włąściwa ANOVA
+
+ANOVA_D4 <- aov(wynik ~ test + D4, data = pivot_df)
+summary(ANOVA_D4)
+
+#założenia - przeanalizować
+
+shapiro.test(ANOVA_D4$residuals) #rozkłąd błędów jest normalny
+plot(ANOVA_D4, which = 1)
+  
+
+#two-way ANOVA 
+#zmienne niezależne: lekcja i warunek (czy najpierw odbyła się lekcja SM/PADACZKA, lub bez)
+#zmienna zależna wynik testu 
+ggplot(pivot_df, aes(x = test, y = wynik)) + 
+  geom_boxplot(aes(color = warunek)) +
+  theme_bw() +
+  theme(legend.position="bottom")
+
+#włąściwa ANOVA
+
+ANOVA_warunek <- aov(wynik ~ test + warunek, data = pivot_df) # warunek nie jest istotny staytsytycznie!
+summary(ANOVA_warunek )
+
+#założenia - przeanalizować
+
+shapiro.test(ANOVA_warunek $residuals) #rozkłąd błędów jest normalny
+plot(ANOVA_warunek , which = 1)
+  
+
+#założenia wszędzie wydają się spełniają (?)
+
+```
+
+
+## inne
+
+```{r}
+view(DF_SM_3)
+
+hist(DF_SM_3$SUM_A)
+hist(DF_SM_3$SUM_B)
+table(DF_SM_3$narodowosc) #bez sensu
+
+
+hist(sqrt(DF_SM_3$SUM_A)) 
+hist(log(DF_SM_3$SUM_B + 1)) #ANOVA na skośnej zmiennej zależnej; k-w test
+
+```
