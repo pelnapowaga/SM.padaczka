@@ -30,23 +30,35 @@ View(KWESTIONARIUSZ_SM_PADACZKA)
 
 SM<-KWESTIONARIUSZ_SM %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
-  mutate(warunek = "SM")
+  mutate(warunek = "SM") %>% 
+  filter(plec == "Kobieta" | plec == "Mężczyzna")
 
 PA_SM<-KWESTIONARIUSZ_PADACZKA_SM %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
-  mutate(warunek = "PA_SM")
+  mutate(warunek = "PA_SM") %>% 
+  filter(plec == "Kobieta" | plec == "Mężczyzna")
 
 SM_PA<-KWESTIONARIUSZ_SM_PADACZKA %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
-  mutate(warunek = "SM_PA")
+  mutate(warunek = "SM_PA") %>% 
+  filter(plec == "Kobieta" | plec == "Mężczyzna")
 
 
 #stwirzenie caej bazy danych dla SM; uzyskalismy baze danych z 37 zmiennymi dla 509 obserwacji
 DF_SM<-rbind(SM, PA_SM, SM_PA)
 str(DF_SM)
-view(DF_SM)
+table(DF_SM$plec)
 
 ```
+
+## Opis próby 
+
+```{r}
+
+#w opisie próby powinniśmy: "tabelka ze średnimi i odchyleniami naszych pomiarów w podziale na test, w podziale na płeć i w podziale na test oraz płeć (nie zapomnieć o raportowaniu N)"
+
+```
+
 
 ## Przekodowanie pytan
 
@@ -82,10 +94,7 @@ DF_SM_2<-DF_SM %>%
          QB11 = ifelse (QB11 == 'PRAWDA', 1, 0), 
          QB12 = ifelse (QB12 == 'FAŁSZ', 1, 0), 
          QB13 = ifelse (QB13 == 'PRAWDA', 1, 0), 
-         QB14 = ifelse (QB14 == 'PRAWDA', 1, 0))
-
-
-
+         QB14 = ifelse (QB14 == 'PRAWDA', 1, 0)) 
 
 
 ```
@@ -110,6 +119,7 @@ DF_SM_3 <- DF_SM_2 %>%
 ## Rzetelność kwestionariusza 
 
 ```{r}
+install.packages("psych")
 library(psych)
 
 alpha(DF_SM_2 %>% 
@@ -117,7 +127,10 @@ alpha(DF_SM_2 %>%
 
 # raw_alpha = 0.8730171, dobra rzetelność
 
+alpha(DF_SM_2 %>% 
+  select(starts_with("QB")))
 
+# raw_alpha = 0.8271339, dobra rzetelność
 ```
 
 ## Trafność kwestionariusza - EFA 
@@ -162,44 +175,8 @@ cortest.bartlett(cor(answers_A)) #H0: macierz korelacji jest identycznościowa -
 fit_1<-fa(r = answers_A, nfactors = 2, rotate = "varimax")
 print(fit_1)
 
-#---
+#powinna byc dla danych tetrachorycznych, ale wtedy nie wychodzi; do przemyslenia 
 
-answers_B <- DF_SM_2 %>% 
-  select(starts_with("QB"))
-
-Korelacja <- cor(answers_B,
-                 method = "spearman",
-                 use = "pairwise.complete.obs")
-ev_Dane <- eigen(Korelacja) 
-ap_Dane <- parallel(subject=nrow(answers),
-                    var=ncol(answers),
-                    rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
-nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji 
-                  aparallel = ap_Dane$eigen$qevpea) 
-plotnScree(nS_Dane)
-
-#macież korelacji
-cor_answers_B<-cor(answers_B, method = "spearman")
-View(cor_answers_B) 
-
-sum(cor(cor_answers_B)<0.3)/length(cor_answers_B-14)*100 #80% korelacji jest poniżej 0.3
-(sum(cor(cor_answers_B)>0.9)-14)/length(cor_answers_B-14)*100 #nie ma żadnej korelacji powyżej 0.9
-
-#wyznacznik macierzy korelacji
-det(cor(answers_B)) #0.02040104
-
-#kryterium KMO
-KMO(cor(answers_B)) 
-
-#czy macierz jest macierzą identycznościową
-cortest.bartlett(cor(answers_B)) #H0: macierz korelacji jest identycznościowa - dane nie mają ze sobą nic wspólnego; mamy podstawy do orzucenia H0
-
-#właściwa EFA
-fit_2<-fa(r = answers_B, nfactors = 1, rotate = "varimax")
-print(fit_2)
-
-
-#dla QA optymalne są dwa czynniki, a dla QB optymalny jest 1 czynnik
 
 ```
 
@@ -241,16 +218,16 @@ ggplot(ggplot_df, aes(x = wynik)) +
 ```
 
 ## ANOVA 
+Zamiast ANOVY lepiej sprawdzą się modele liniowe 
 
 ```{r}
-
+#przygotowanie danych 
 pivot_df <- DF_SM_3 %>% 
   select(plec, D4, SUM_A, SUM_B, warunek) %>%
   mutate(A = SUM_A, B = SUM_B) %>% 
   pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik")
 
 view(pivot_df)
-table(DF_SM_3$plec) #czy usuwamy plec "inna"??
 
 
 #two-way ANOVA 
@@ -262,9 +239,9 @@ ggplot(pivot_df, aes(x = test, y = wynik)) +
   theme_bw() + 
   theme(legend.position="bottom")
 
-#włąściwa ANOVA
+#właściwa ANOVA
 
-ANOVA_plec<- aov(wynik ~ test + plec, data = pivot_df)
+ANOVA_plec<- aov(wynik ~ test * plec, data = pivot_df)
 summary(ANOVA_plec)
 
 #założenia - przeanalizować
@@ -284,7 +261,7 @@ ggplot(pivot_df, aes(x = test, y = wynik)) +
 
 #włąściwa ANOVA
 
-ANOVA_D4 <- aov(wynik ~ test + D4, data = pivot_df)
+ANOVA_D4 <- aov(wynik ~ test * D4, data = pivot_df)
 summary(ANOVA_D4)
 
 #założenia - przeanalizować
@@ -303,7 +280,7 @@ ggplot(pivot_df, aes(x = test, y = wynik)) +
 
 #włąściwa ANOVA
 
-ANOVA_warunek <- aov(wynik ~ test + warunek, data = pivot_df) # warunek nie jest istotny staytsytycznie!
+ANOVA_warunek <- aov(wynik ~ test * warunek, data = pivot_df) # warunek nie jest istotny staytsytycznie!
 summary(ANOVA_warunek )
 
 #założenia - przeanalizować
@@ -313,6 +290,7 @@ plot(ANOVA_warunek , which = 1)
   
 
 #założenia wszędzie wydają się spełnione (?)
+#dla wayniku i płci oraz wyniku i wynik i test powinniśmy zrobić test t 
 
 ```
 
