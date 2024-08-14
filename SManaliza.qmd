@@ -294,6 +294,8 @@ plot(ANOVA_warunek , which = 1)
 
 ```
 
+##test 
+hist 
 
 ## inne
 
