@@ -1,0 +1,68 @@
+---
+title: "Padaczka_SM"
+author: "Agata Adamczyk"
+format: html
+editor: visual
+---
+
+```{r}
+library(readxl)
+library(tidyverse)
+```
+
+```{r}
+padaczka <- read_excel("padaczka.xlsx")
+padaczka_sm <- read_excel("padaczka_sm.xlsx")
+sm_padaczka <- read_excel("sm_padaczka.xlsx")
+```
+
+```{r}
+table(DF_PAD$qa15)
+
+
+DF_PAD <- rbind(padaczka, sm_padaczka, padaczka_sm) %>% 
+  rename("D9" = "D9q" ) 
+
+```
+
+```{r}
+DF_PAD_2 <- DF_PAD %>% 
+  mutate(qa1 = ifelse(qa1 == "TRUE", 1, 0),
+         qa2 = ifelse(qa2 == "TRUE", 1, 0),
+         qa3 = ifelse(qa3 == "TRUE", 1, 0),
+         qa4 = ifelse(qa4 == "TRUE", 1, 0),
+         qa5 = ifelse(qa5 == "TRUE", 1, 0),
+         qa6 = ifelse(qa6 == "TRUE", 1, 0),
+         qa7 = ifelse(qa7 == "TRUE", 1, 0),
+         qa8 = ifelse(qa8 == "TRUE", 1, 0),
+         qa9 = ifelse(qa9 == "TRUE", 1, 0),
+         qa10 = ifelse(qa10 == "TRUE", 1, 0),
+         qa11 = ifelse(qa11 == "Wszystkie odpowiedzi są prawidłowe", 1, 0),
+         qa12 = ifelse(qa12 == "Wszystkie odpowiedzi są prawidłowe ", 1, 0),
+         qa13 = ifelse(qa13 == "Może uprawiać większość dyscyplin sportowych za wyjątkiem nurkowania i wspinaczki", 1, 0),
+         qa14 = ifelse(qa14 == "Przewlekła choroba neurologiczna ", 1, 0),
+         qa15 = ifelse(qa15 == "Osoby chorujące na padaczkę muszą przyjmować leki do końca swojego życia 
+", 1, 0),
+         qb1 = ifelse(qb1 == "TRUE", 1, 0),
+         qb2 = ifelse(qb2 == "TRUE", 1, 0),
+         qb3 = ifelse(qb3 == "TRUE", 1, 0),
+         qb4 = ifelse(qb4 == "TRUE", 1, 0),
+         qb5 = ifelse(qb5 == "TRUE", 1, 0),
+         qb6 = ifelse(qb6 == "TRUE", 1, 0),
+         qb7 = ifelse(qb7 == "TRUE", 1, 0),
+         qb8 = ifelse(qb8 == "TRUE", 1, 0),
+         qb9 = ifelse(qb9 == "TRUE", 1, 0),
+         qb10 = ifelse(qb10 == "TRUE", 1, 0),
+         qb11 = ifelse(qb11 == "Wszystkie odpowiedzi są prawidłowe", 1, 0),
+         qb12 = ifelse(qb12 == "Wszystkie odpowiedzi są prawidłowe ", 1, 0),
+         qb13 = ifelse(qb13 == "Może uprawiać większość dyscyplin sportowych za wyjątkiem nurkowania i wspinaczki", 1, 0),
+         qb14 = ifelse(qb14 == "Przewlekła choroba neurologiczna ", 1, 0),
+         qb15 = ifelse(qb15 == "Osoby chorujące na padaczkę muszą przyjmować leki do końca swojego życia 
+", 1, 0)) 
+
+
+
+
+
+table(DF_PAD$narodowosc)
+```
