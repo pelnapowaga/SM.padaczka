@@ -27,7 +27,7 @@ KWESTIONARIUSZ_SM_PADACZKA <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_SM-PAD
 
 SM<-KWESTIONARIUSZ_SM %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
-  mutate(warunek = "SM") 
+  mutate(warunek = "SM") %>% 
 
 PA_SM<-KWESTIONARIUSZ_PADACZKA_SM %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
@@ -74,6 +74,8 @@ DF_SM %>%
   group_by(warunek, plec) %>% 
   summarise(N=n())
 
+table(DF_SM$plec)
+
 DF_SM %>% 
   group_by(warunek, D4) %>% 
   summarise(N=n())
@@ -81,6 +83,9 @@ DF_SM %>%
 DF_SM %>% 
   group_by(warunek) %>% 
   summarise(M = round(mean(wiek),2), SD =  round(sd(wiek),2))
+
+DF_SM %>% 
+  summarise(M = round(mean(wiek),2), SD =  round(sd(wiek),2)) 
 
 # w sumie możemy już opisać próbę 
 
@@ -254,6 +259,7 @@ pivot_df <- DF_SM_3 %>%
   pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik")
 
 view(pivot_df)
+str(pivot_df)
 
 ```
 
@@ -274,7 +280,6 @@ bartlett.test(pivot_df$wynik ~ pivot_df$test)
 
 t.test(pivot_df$test, pivot_df$wynik,
        alternative = "two.sided",
-       mu = 0, 
        paired = TRUE,   
        var.equal = TRUE,
        conf.level = 0.95)
@@ -288,14 +293,14 @@ bartlett.test(pivot_df$wynik ~ pivot_df$plec)
 
 t.test(pivot_df$plec, pivot_df$wynik,
        alternative = "two.sided",
-       mu = 0, 
        paired = TRUE,   
-       var.equal = TRUE,
+       var.equal = FALSE,
        conf.level = 0.95)
 
-
-
 ```
+
+## Modele liniowe 
+
 
 
 
