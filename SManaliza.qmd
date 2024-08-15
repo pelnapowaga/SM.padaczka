@@ -9,17 +9,20 @@ editor: visual
 
 ```{r}
 install.packages("tidyverse")
-library(tidyverse) 
+library(tidyverse)
 
 library(readr)
 KWESTIONARIUSZ_SM <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_SM.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE)
+View(KWESTIONARIUSZ_SM)
 
 KWESTIONARIUSZ_PADACZKA_SM <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_PADACZKA- SM.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE)
+View(KWESTIONARIUSZ_PADACZKA_SM)
 
 KWESTIONARIUSZ_SM_PADACZKA <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_SM-PADACZKA.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE)
+View(KWESTIONARIUSZ_SM_PADACZKA)
 
 
 
@@ -27,41 +30,25 @@ KWESTIONARIUSZ_SM_PADACZKA <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_SM-PAD
 
 SM<-KWESTIONARIUSZ_SM %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
-  mutate(warunek = "SM") 
+  mutate(warunek = "SM") %>% 
+  filter(plec == "Kobieta" | plec == "Mężczyzna")
 
 PA_SM<-KWESTIONARIUSZ_PADACZKA_SM %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
-  mutate(warunek = "PA_SM") 
+  mutate(warunek = "PA_SM") %>% 
+  filter(plec == "Kobieta" | plec == "Mężczyzna")
 
 SM_PA<-KWESTIONARIUSZ_SM_PADACZKA %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
-  mutate(warunek = "SM_PA") 
+  mutate(warunek = "SM_PA") %>% 
+  filter(plec == "Kobieta" | plec == "Mężczyzna")
+
 
 #stwirzenie caej bazy danych dla SM; uzyskalismy baze danych z 37 zmiennymi dla 509 obserwacji
 DF_SM<-rbind(SM, PA_SM, SM_PA)
+str(DF_SM)
+table(DF_SM$plec)
 
-
-```
-
-## Porządki
-
-```{r}
-
-DF_SM <-DF_SM %>% 
-  filter(plec == "Kobieta" | plec == "Mężczyzna") %>% 
-  mutate(wiek = case_when(
-    wiek == "14-15 lat" ~ 14,
-    wiek == "15-16 lat" ~ 15,
-    wiek == "16-17 lat" ~ 16,
-    wiek == "17-18 lat" ~ 17,
-    wiek == "18-19 lat" ~ 18,
-    wiek == "Powyżej 20 lat" ~ 20)) %>% 
-  filter(wiek == 14| wiek == 15 | wiek == 16 | wiek == 17 | wiek == 18)
-
-table(DF_SM$wiek)
-
-#wywalamy powyżej 20 rż. 
-    
 ```
 
 ## Opis próby
@@ -69,20 +56,6 @@ table(DF_SM$wiek)
 ```{r}
 
 #w opisie próby powinniśmy: "tabelka ze średnimi i odchyleniami naszych pomiarów w podziale na test, w podziale na płeć i w podziale na test oraz płeć (nie zapomnieć o raportowaniu N)"
-
-DF_SM %>% 
-  group_by(warunek, plec) %>% 
-  summarise(N=n())
-
-DF_SM %>% 
-  group_by(warunek, D4) %>% 
-  summarise(N=n())
-
-DF_SM %>% 
-  group_by(warunek) %>% 
-  summarise(M = round(mean(wiek),2), SD =  round(sd(wiek),2))
-
-# w sumie możemy już opisać próbę 
 
 ```
 
@@ -244,7 +217,9 @@ ggplot(ggplot_df, aes(x = wynik)) +
 
 ```
 
-## Przygotowanie danych do testów 
+## ANOVA
+
+Zamiast ANOVY lepiej sprawdzą się modele liniowe
 
 ```{r}
 #przygotowanie danych 
@@ -254,50 +229,6 @@ pivot_df <- DF_SM_3 %>%
   pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik")
 
 view(pivot_df)
-
-```
-
-## Test t dla grup zaleźnych 
-
-``` {r}
-
-hist(pivot_df$wynik)
-summary(DF_SM_3$SUM_A)
-summary(DF_SM_3$SUM_B)
-
-#dla zmiennej test 
-
-#sprawdzamy homogeniczność wariancji; 
-#H0: wariancje są jednorodne - mamy podstawy do odrzucenia
-bartlett.test(pivot_df$wynik ~ pivot_df$test)
-
-
-t.test(pivot_df$test, pivot_df$wynik,
-       alternative = "two.sided",
-       mu = 0, 
-       paired = TRUE,   
-       var.equal = TRUE,
-       conf.level = 0.95)
-
-
-
-#dla zmiennej płeć 
-#H0: wariancje są jednorodne - nie mamy podstaw do odrzucenia 
-
-bartlett.test(pivot_df$wynik ~ pivot_df$plec)
-
-t.test(pivot_df$plec, pivot_df$wynik,
-       alternative = "two.sided",
-       mu = 0, 
-       paired = TRUE,   
-       var.equal = TRUE,
-       conf.level = 0.95)
-
-
-
-```
-
-
 
 
 #two-way ANOVA 
@@ -363,6 +294,8 @@ plot(ANOVA_warunek , which = 1)
 #dla wayniku i płci oraz wyniku i wynik i test powinniśmy zrobić test t 
 
 ```
+
+##test hist
 
 ## inne
 
