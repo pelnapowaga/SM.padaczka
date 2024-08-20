@@ -40,12 +40,17 @@ SM_PA<-KWESTIONARIUSZ_SM_PADACZKA %>%
 #stwirzenie caej bazy danych dla SM; uzyskalismy baze danych z 37 zmiennymi dla 509 obserwacji
 DF_SM<-rbind(SM, PA_SM, SM_PA)
 
+#509 obserwacji 
+
 
 ```
 
 ## Porządki
 
 ```{r}
+
+table(DF_SM$wiek)
+table(DF_SM$plec)
 
 DF_SM <-DF_SM %>% 
   filter(plec == "Kobieta" | plec == "Mężczyzna") %>% 
@@ -60,8 +65,24 @@ DF_SM <-DF_SM %>%
 
 table(DF_SM$wiek)
 
-#wywalamy powyżej 20 rż. 
+#wywalamy powyżej 20 rż.; zostaje nam 491 obserwacji 
     
+```
+
+## czy ktoś nam strzelał w pytaniach
+
+```{r}
+
+DF_SM %>% 
+  mutate(nr = row_number()) %>% 
+  filter(D6 == "Nie") %>% 
+  filter(D8 == "Tak") 
+
+#wyrzucamy te 3 osoby 
+
+DF_SM <- DF_SM[-c(57,77,346),]
+#zostaje nam 488 obserwacji 
+
 ```
 
 ## Opis próby
@@ -77,7 +98,7 @@ DF_SM %>%
 table(DF_SM$plec)
 
 DF_SM %>% 
-  group_by(warunek, D4) %>% 
+  group_by( D4) %>% 
   summarise(N=n())
 
 DF_SM %>% 
@@ -147,6 +168,37 @@ DF_SM_3 <- DF_SM_2 %>%
 
 ```
 
+## Zmienna D7
+
+```{r}
+
+install.packages("stringr")
+library(stringr)
+library(tidyverse)
+
+DF_SM_D7 <- DF_SM %>%
+  filter(str_detect(D7, "Internet| Szkoła | Rodzina | Znajomi"))
+
+temp <- DF_SM %>% 
+  mutate(D7_internet = str_detect(D7,"Internet"), D7_szkola = str_detect(D7,"Szkoła"))
+# test t na wynikach osób true/false
+# conajmniej 30 osób
+a1<- temp %>% 
+  filter(D7_internet) %>% 
+  select(wiek) %>% 
+  mutate(zrodlo = "Internet")
+
+a2<- temp %>% 
+  filter(D7_szkola) %>% 
+  select(wiek) %>% 
+  mutate(zrodlo = "Szkoła")
+
+aa<- bind_rows(a1, a2)
+
+# i teraz ANOVA + post hoc
+
+```
+
 ## Rzetelność kwestionariusza
 
 ```{r}
@@ -203,10 +255,14 @@ KMO(cor(answers_A))
 cortest.bartlett(cor(answers_A)) #H0: macierz korelacji jest identycznościowa - dane nie mają ze sobą nic wspólnego; mamy podstawy do orzucenia H0
 
 #właściwa EFA
-fit_1<-fa(r = answers_A, nfactors = 2, rotate = "varimax")
+fit_1<-fa(r = answers_A, nfactors = 1, rotate = "varimax", cor = "tet")
 print(fit_1)
 
-#powinna byc dla danych tetrachorycznych, ale wtedy nie wychodzi; do przemyslenia 
+# powinna byc dla danych tetrachorycznych, ale wtedy nie wychodzi; do przemyslenia 
+# jest sens badać jeden wynik 
+# ile wyszło czynników + dodajemy ładunki czynnikowe
+# model 1 czynnikowy jest gorzej doapsowany niż 2
+# w załączniku
 
 
 ```
@@ -249,137 +305,139 @@ ggplot(ggplot_df, aes(x = wynik)) +
 
 ```
 
-## Przygotowanie danych do testów 
+## Przygotowanie danych do testów
 
 ```{r}
 #przygotowanie danych 
 pivot_df <- DF_SM_3 %>% 
-  select(plec, D4, SUM_A, SUM_B, warunek) %>%
+  select(plec, D4, SUM_A, SUM_B, warunek, D5, D9) %>%
   mutate(A = SUM_A, B = SUM_B) %>% 
-  pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik")
+  pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik") 
 
 view(pivot_df)
 str(pivot_df)
-
 ```
 
-## Test t dla grup zaleźnych 
+## Test t
 
-``` {r}
+```{r}
 
 hist(pivot_df$wynik)
 summary(DF_SM_3$SUM_A)
 summary(DF_SM_3$SUM_B)
 
-#dla zmiennej test 
+#dla zmiennej test - t.test dla prób zależnych
+
+
+pivot_df_testA <- pivot_df %>% 
+  filter(test == "A")
+
+pivot_df_testB <- pivot_df %>% 
+  filter(test == "B")
 
 #sprawdzamy homogeniczność wariancji; 
-#H0: wariancje są jednorodne - mamy podstawy do odrzucenia
-bartlett.test(pivot_df$wynik ~ pivot_df$test)
+#H0: wariancje są homogeniczne - mamy podstawy do odrzucenia - wariancje są heterogeniczne
 
+var.test(pivot_df_testA$wynik, pivot_df_testB$wynik)
 
-t.test(pivot_df$test, pivot_df$wynik,
-       alternative = "two.sided",
-       paired = TRUE,   
-       var.equal = TRUE,
-       conf.level = 0.95)
-
-
-
-#dla zmiennej płeć 
-#H0: wariancje są jednorodne - nie mamy podstaw do odrzucenia 
-
-bartlett.test(pivot_df$wynik ~ pivot_df$plec)
-
-t.test(pivot_df$plec, pivot_df$wynik,
-       alternative = "two.sided",
+test_pelc <- t.test(pivot_df_testA$wynik, pivot_df_testB$wynik,
        paired = TRUE,   
        var.equal = FALSE,
        conf.level = 0.95)
 
+cohen.d(test_pelc) ##
+
+#d cohena - doliczyć i zaraportować
+
+
+#dla zmiennej płeć - t.test dla zmiennych niezależnych
+
+pivot_df_plec_m <- pivot_df %>% 
+  filter(plec == "Mężczyzna")
+
+pivot_df_plec_k <- pivot_df %>% 
+  filter(plec == "Kobieta")
+
+
+#H0: wariancje są homogeniczne - nie mamy podstaw do odrzucenia = wariancje są homogeniczne
+
+var.test(pivot_df_plec_m$wynik, pivot_df_plec_k$wynik)
+
+
+t.test(pivot_df_plec_m$wynik, pivot_df_plec_k$wynik,
+       paired = FALSE,   
+       var.equal = TRUE,
+       conf.level = 0.95)
+
+#dla zmiennej D5 - t.test dla prób niezależnych
+
+table(pivot_df$D5)
+
+pivot_df_D5i <- pivot_df %>% 
+  filter(D5 == "Inny")
+
+pivot_df_D5b <- pivot_df %>% 
+  filter(D5 == "Z rozszerzoną biologią")
+
+
+var.test(pivot_df_D5b$wynik, pivot_df_D5i$wynik)
+#mamy podstawy do odrzucenia hipotezy zerowej == wariancje są heterogeniczne
+
+t.test(pivot_df_D5b$wynik, pivot_df_D5i$wynik,
+       paired = FALSE,   
+       var.equal = FALSE,
+       conf.level = 0.95)
+
+#nieistotne
+#ile osób jest w grupach 
+
+nrow(pivot_df_D5b) 
 ```
 
-## Modele liniowe 
-
-
-
-
-
-#two-way ANOVA 
-#zmienne niezależne lekcja i płeć
-#zmienna zależna wynik testu
-
-ggplot(pivot_df, aes(x = test, y = wynik)) + 
-  geom_boxplot(aes(color = plec)) +
-  theme_bw() + 
-  theme(legend.position="bottom")
-
-#właściwa ANOVA
-
-ANOVA_plec<- aov(wynik ~ test * plec, data = pivot_df)
-summary(ANOVA_plec)
-
-#założenia - przeanalizować
-
-shapiro.test(ANOVA_plec$residuals) #rozkłąd błędów jest normalny
-plot(ANOVA_plec, which = 1)
-
-#z metodologii wziąć efekt główny, prosty i całkowity 
-
-#two-way ANOVA 
-#zmienne niezależne: lekcja i miejsce zamieszkania
-#zmienna zależna wynik testu 
-ggplot(pivot_df, aes(x = test, y = wynik)) + 
-  geom_boxplot(aes(color = D4)) +
-  theme_bw() +
-  theme(legend.position="bottom")
-
-#włąściwa ANOVA
-
-ANOVA_D4 <- aov(wynik ~ test * D4, data = pivot_df)
-summary(ANOVA_D4)
-
-#założenia - przeanalizować
-
-shapiro.test(ANOVA_D4$residuals) #rozkłąd błędów jest normalny
-plot(ANOVA_D4, which = 1)
-  
-
-#two-way ANOVA 
-#zmienne niezależne: lekcja i warunek (czy najpierw odbyła się lekcja SM/PADACZKA, lub bez)
-#zmienna zależna wynik testu 
-ggplot(pivot_df, aes(x = test, y = wynik)) + 
-  geom_boxplot(aes(color = warunek)) +
-  theme_bw() +
-  theme(legend.position="bottom")
-
-#włąściwa ANOVA
-
-ANOVA_warunek <- aov(wynik ~ test * warunek, data = pivot_df) # warunek nie jest istotny staytsytycznie!
-summary(ANOVA_warunek )
-
-#założenia - przeanalizować
-
-shapiro.test(ANOVA_warunek $residuals) #rozkłąd błędów jest normalny
-plot(ANOVA_warunek , which = 1)
-  
-
-#założenia wszędzie wydają się spełnione (?)
-#dla wayniku i płci oraz wyniku i wynik i test powinniśmy zrobić test t 
-
-```
-
-## inne
+## Modele liniowe
 
 ```{r}
-view(DF_SM_3)
 
-hist(DF_SM_3$SUM_A)
-hist(DF_SM_3$SUM_B)
-table(DF_SM_3$narodowosc) #bez sensu
+#pkt 3 
+
+#model1
+DF_SM_4 <- DF_SM_3 %>% 
+  mutate(wiedza = SUM_B - SUM_A)
 
 
-hist(sqrt(DF_SM_3$SUM_A)) 
-hist(log(DF_SM_3$SUM_B + 1)) #ANOVA na skośnej zmiennej zależnej; k-w test
+mod1 <- lm(wiedza ~ D4, data = DF_SM_4)
+summary(mod1)
+
+plot(mod1, which = 1)
+plot(mod1, which = 2)
+plot(mod1, which = 3)
+
+
+#model 2
+table(DF_SM_4$D9)
+
+mod2 <- lm(wiedza ~ D9, data = DF_SM_4)
+summary(mod2)
+
+plot(mod2, which = 1)
+plot(mod2, which = 2)
+plot(mod2, which = 3)
+
+ggplot(DF_SM_4, aes(x = D9, y = wiedza)) +
+  geom_boxplot() +
+  theme_bw()
+
+#ostatecznie wychodzi nam, że miejcsce zamieszkania nie ma znaczenia; jest różnica w zależności od poziomu wiedzy przed lekcją - i założenia do tego modelu są spełnjione; wszystko śmiga
+
+#kat "dobra" nie istotnie różni się od kat "bardzo dobra"
+
+# estimate, std error, intercepr = wyraz wolny; statystyka f i jej p-value; r2
+
+#pkt 1 
+
 
 ```
+
+## wykresy
+
+\`\`\`
