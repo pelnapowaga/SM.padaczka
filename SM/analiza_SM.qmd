@@ -27,7 +27,7 @@ KWESTIONARIUSZ_SM_PADACZKA <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_SM-PAD
 
 SM<-KWESTIONARIUSZ_SM %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
-  mutate(warunek = "SM") %>% 
+  mutate(warunek = "SM") 
 
 PA_SM<-KWESTIONARIUSZ_PADACZKA_SM %>% 
   select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
@@ -69,7 +69,7 @@ table(DF_SM$wiek)
     
 ```
 
-## czy ktoś nam strzelał w pytaniach
+## Czy ktoś nam strzelał w pytaniach
 
 ```{r}
 
@@ -174,26 +174,48 @@ DF_SM_3 <- DF_SM_2 %>%
 
 install.packages("stringr")
 library(stringr)
-library(tidyverse)
 
 DF_SM_D7 <- DF_SM %>%
   filter(str_detect(D7, "Internet| Szkoła | Rodzina | Znajomi"))
 
-temp <- DF_SM %>% 
-  mutate(D7_internet = str_detect(D7,"Internet"), D7_szkola = str_detect(D7,"Szkoła"))
+DF_SM_D7 <- DF_SM_3 %>% 
+  mutate(D7_internet = str_detect(D7,"Internet"), 
+         D7_szkola = str_detect(D7,"Szkoła"), 
+         D7_rodzina = str_detect(D7, "Rodzina"), 
+         D7_inne = str_detect(D7, "Inne"), 
+         D7_znajomi = str_detect(D7, "Znajomi"))
+
+
 # test t na wynikach osób true/false
 # conajmniej 30 osób
-a1<- temp %>% 
+
+internet <- DF_SM_D7 %>% 
   filter(D7_internet) %>% 
-  select(wiek) %>% 
+  select(SUM_A) %>% 
   mutate(zrodlo = "Internet")
 
-a2<- temp %>% 
+szkola <- DF_SM_D7 %>% 
   filter(D7_szkola) %>% 
-  select(wiek) %>% 
+  select(SUM_A) %>% 
   mutate(zrodlo = "Szkoła")
 
-aa<- bind_rows(a1, a2)
+rodzina <- DF_SM_D7 %>% 
+  filter(D7_rodzina) %>% 
+  select(SUM_A) %>% 
+  mutate(zrodlo = "Rodzina")
+
+inne <- DF_SM_D7 %>% 
+  filter(D7_inne) %>% 
+  select(SUM_A) %>% 
+  mutate(zrodlo = "Inne")
+
+znajomi <- DF_SM_D7 %>% 
+  filter(D7_znajomi) %>% 
+  select(SUM_A) %>% 
+  mutate(zrodlo = "Znajomi")
+
+
+D7<- bind_rows(internet, szkola, rodzina, inne, znajomi)
 
 # i teraz ANOVA + post hoc
 
@@ -216,7 +238,7 @@ alpha(DF_SM_2 %>%
 # raw_alpha = 0.8271339, dobra rzetelność
 ```
 
-## Trafność kwestionariusza - EFA
+## Rzetelność kwestionariusza - EFA
 
 ```{r}
 
@@ -267,7 +289,7 @@ print(fit_1)
 
 ```
 
-## wykres gęstości wyników: pre-test/re-test + płeć + demografia
+## Wykres gęstości wyników: pre-test/re-test + płeć + demografia
 
 ```{r}
 
@@ -305,7 +327,7 @@ ggplot(ggplot_df, aes(x = wynik)) +
 
 ```
 
-## Przygotowanie danych do testów
+## Przygotowanie danych do testów: test t i modele liniowe
 
 ```{r}
 #przygotowanie danych 
@@ -438,6 +460,47 @@ ggplot(DF_SM_4, aes(x = D9, y = wiedza)) +
 
 ```
 
-## wykresy
+## ANOVA dla zmiennej D7
 
-\`\`\`
+```{r}
+
+aov_1 <- aov(SUM_A ~ zrodlo, data = D7)
+summary(aov_1)
+
+#ANOVA jest nieistotna statystycznie
+
+plot(aov_1)
+
+# wykresy są w porządku; mamy zachowane założenie o liniowosci oraz normalności; wariancje błędów też są w porządku
+# ale sam model jest nieistotny statystycznie
+
+
+# box plot
+
+ggplot(D7, aes(x = zrodlo, y = SUM_A)) +
+  geom_boxplot() + 
+  theme_bw() +
+  xlab("Deklarowane źródło wiedzy") +
+  ylab("Wynik testu przed prezentacją")
+
+```
+
+## ANOVA dla warunków
+
+```{r}
+aov_2<-aov(SUM_A ~ warunek, data = DF_SM_3)
+summary(aov_2)
+
+#równiż nie istotna statystycznue
+
+plot(aov_2)
+
+#mamy zaburzoną normalność 
+
+ggplot(DF_SM_3, aes(x = warunek, y = SUM_A)) +
+  geom_boxplot() + 
+  theme_bw() +
+  xlab("Warunek") +
+  ylab("Wynik testu przed prezentacją")
+
+```
