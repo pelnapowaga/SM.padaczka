@@ -417,7 +417,6 @@ t.test(pivot_df_D5b$wynik, pivot_df_D5i$wynik,
 nrow(pivot_df_D5b) 
 ```
 
-
 ## Modele liniowe
 
 ```{r}

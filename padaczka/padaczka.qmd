@@ -72,10 +72,7 @@ DF_PAD_2 <- DF_PAD %>%
          qb15 = ifelse(qb15 == "Osoby chorujące na padaczkę muszą przyjmować leki do końca swojego życia 
 ", 1, 0)) 
 
-
-
-
-
+str(DF_PAD_2)
 table(DF_PAD$narodowosc)
 ```
 
@@ -95,6 +92,9 @@ DF_PAD_2 <- DF_PAD_2 %>%
     wiek == "Powyżej 20 lat" ~ 20)) %>% 
   filter(wiek == 14| wiek == 15 | wiek == 16 | wiek == 17 | wiek == 18)
 
+#wyrzucamy 2 osoby w wieku 20 lat
+#wyrzucamy 18 osób z płcią inna
+
 ```
 
 ## Czy ktoś strzelał
@@ -107,6 +107,8 @@ DF_PAD_2 %>%
 
 #wyrzucamy 6 osób
 DF_PAD_2 <- DF_PAD_2[-c(27,361,431, 468, 511, 554),]
+
+#tutaj wyrzucamy 6 osób i ostatecznie z całej bazy danych zabraliśmy 26 osób; zostajemy z 550 obserwacji
 ```
 
 ## Opis próby
@@ -117,7 +119,7 @@ DF_PAD_2 %>%
   group_by(warunek, plec) %>% 
   summarise(N=n())
 
-table(DF_SM$plec)
+table(DF_PAD_2$plec)
 
 DF_PAD_2 %>% 
   group_by( D4) %>% 
@@ -152,16 +154,16 @@ DF_PAD_3 <- DF_PAD_2 %>%
 
 ```{r}
 
+alpha(DF_PAD_2 %>% 
+  select(starts_with("qa")))
+
+# raw_alpha = 0.6956587 = 0.70
 
 alpha(DF_PAD_2 %>% 
-  select(starts_with("QA")))
+  select(starts_with("qb")))
 
-# raw_alpha = 0.6949531
+# raw_alpha = 0.692472 = 0.70
 
-alpha(DF_PAD_2 %>% 
-  select(starts_with("QB")))
-
-# raw_alpha = 0.6777717
 ```
 
 ## Wykresy gęstości
@@ -213,3 +215,75 @@ pivot_df_pad <- DF_PAD_3 %>%
 view(pivot_df_pad)
 str(pivot_df_pad)
 ```
+
+## Testy t 
+
+```{r}
+
+
+```
+
+## Modele liniowe
+
+```{r}
+DF_PAD_4 <- DF_PAD_3 %>% 
+  mutate(wiedza = SUM_B - SUM_A)
+
+#MODEL 1
+
+mod1 <- lm(wiedza ~ D4, data = DF_PAD_4)
+summary(mod1)
+#istotny intercept i 50 000 - 100 000 mieszkańców
+
+plot(mod1, which = 1)
+plot(mod1, which = 2)
+plot(mod1, which = 3)
+
+#wszystkie warunki są spełnione; doczytać jeszcze o 3 wykresie i warością powyżje 2
+
+ggplot(DF_PAD_4, aes(x = D4, y = wiedza)) +
+  geom_boxplot() +
+  theme_bw()
+
+#MODEL 2
+
+mod2 <- lm(wiedza ~ D9, data = DF_PAD_4)
+summary(mod2)
+
+plot(mod2, which = 1)
+plot(mod2, which = 2)
+plot(mod2, which = 3)
+
+#wszystkie warunki są spełnione; doczytać jeszcze o 3 wykresie i warością powyżje 2
+
+ggplot(DF_PAD_4, aes(x = D9, y = wiedza)) +
+  geom_boxplot() +
+  theme_bw()
+```
+
+## ANOVA dla warunków 
+
+```{r}
+
+aov_2<-aov(SUM_A ~ warunek, data = DF_PAD_3)
+summary(aov_2)
+
+#ANOVA istotna dla warunku; całkiem ciekawe
+plot(aov_2)
+# spełnione złożenia dla normalności, liniowości i jednorodności warinacji
+
+ggplot(DF_PAD_3, aes(x = warunek, y = SUM_A)) +
+  geom_boxplot() + 
+  theme_bw() +
+  xlab("Warunek") +
+  ylab("Wynik testu przed prezentacją")
+
+```
+
+
+
+
+
+
+
+
