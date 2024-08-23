@@ -3,6 +3,7 @@ title: "SManaliza"
 author: Zofia Mikołajczak
 format: docx
 editor: visual
+date-modified: 23.08
 ---
 
 ## Przygotowanie bazy danych
@@ -416,6 +417,7 @@ t.test(pivot_df_D5b$wynik, pivot_df_D5i$wynik,
 nrow(pivot_df_D5b) 
 ```
 
+
 ## Modele liniowe
 
 ```{r}
@@ -458,6 +460,32 @@ ggplot(DF_SM_4, aes(x = D9, y = wiedza)) +
 #pkt 1 
 
 
+```
+
+## Modele liniowe dla SUM_A
+
+```{r}
+#pkt 1
+
+
+#model 3
+mod3 <- lm(SUM_A ~ D4, data = DF_SM_4)
+summary(mod3)
+
+plot(mod3, which = 1)
+plot(mod3, which = 2)
+plot(mod3, which = 3)
+
+
+#model 2
+table(DF_SM_4$D9)
+
+mod4 <- lm(SUM_A ~ D9, data = DF_SM_4)
+summary(mod4)
+
+plot(mod4, which = 1)
+plot(mod4, which = 2)
+plot(mod4, which = 3)
 ```
 
 ## ANOVA dla zmiennej D7
