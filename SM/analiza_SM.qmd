@@ -6,13 +6,20 @@ editor: visual
 date-modified: 23.08
 ---
 
+## Pakiety
+
+```{r}
+library(tidyverse) 
+library(readr)
+library(psych)
+library(dplyr)
+
+```
+
 ## Przygotowanie bazy danych
 
 ```{r}
-install.packages("tidyverse")
-library(tidyverse) 
 
-library(readr)
 KWESTIONARIUSZ_SM <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_SM.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE)
 
@@ -225,11 +232,9 @@ D7<- bind_rows(internet, szkola, rodzina, inne, znajomi)
 ## Rzetelność kwestionariusza
 
 ```{r}
-install.packages("psych")
-library(psych)
 
 alpha(DF_SM_2 %>% 
-  select(starts_with("QA")))
+  select(starts_with("QA"))) 
 
 # raw_alpha = 0.8730171, dobra rzetelność
 
@@ -237,6 +242,8 @@ alpha(DF_SM_2 %>%
   select(starts_with("QB")))
 
 # raw_alpha = 0.8271339, dobra rzetelność
+
+alph
 ```
 
 ## Rzetelność kwestionariusza - EFA
