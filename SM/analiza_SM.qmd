@@ -9,10 +9,13 @@ date-modified: 23.08
 ## Pakiety
 
 ```{r}
+install.packages("lsr")
+
 library(tidyverse) 
 library(readr)
 library(psych)
 library(dplyr)
+library(lsr)
 
 ```
 
@@ -375,7 +378,7 @@ test_pelc <- t.test(pivot_df_testA$wynik, pivot_df_testB$wynik,
        var.equal = FALSE,
        conf.level = 0.95)
 
-cohen.d(test_pelc) ##
+cohensD(pivot_df_testA$wynik, pivot_df_testB$wynik) ##
 
 #d cohena - doliczyć i zaraportować
 

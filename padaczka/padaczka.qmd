@@ -354,3 +354,5 @@ ggplot(DF_PAD_3, aes(x = warunek, y = SUM_A)) +
   ylab("Wynik testu przed prezentacją")
 
 ```
+
+zostało nam wykonanie testów t :) :)
