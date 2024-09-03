@@ -3,13 +3,14 @@ title: "Padaczka_SM"
 author: "Agata Adamczyk"
 format: html
 editor: visual
-date-modified: 21.08
+date-modified: 25.08
 ---
 
 ```{r}
 library(readxl)
 library(tidyverse)
 library(psych)
+
 ```
 
 ## Przygotowanie bazy
@@ -38,6 +39,9 @@ DF_PAD <- rbind(padaczka, sm_padaczka, padaczka_sm) %>%
 ## Przekodowanie zmiennych
 
 ```{r}
+table(DF_PAD$qa14)
+table(DF_PAD_2$qa14)
+
 DF_PAD_2 <- DF_PAD %>% 
   mutate(qa1 = ifelse(qa1 == "FALSE", 1, 0),
          qa2 = ifelse(qa2 == "FALSE", 1, 0),
@@ -50,11 +54,10 @@ DF_PAD_2 <- DF_PAD %>%
          qa9 = ifelse(qa9 == "FALSE", 1, 0),
          qa10 = ifelse(qa10 == "FALSE", 1, 0),
          qa11 = ifelse(qa11 == "Wszystkie odpowiedzi są prawidłowe", 1, 0),
-         qa12 = ifelse(qa12 == "Wszystkie odpowiedzi są prawidłowe ", 1, 0),
+         qa12 = ifelse(qa12 == "Wszystkie odpowiedzi są prawidłowe", 1, 0),
          qa13 = ifelse(qa13 == "Może uprawiać większość dyscyplin sportowych za wyjątkiem nurkowania i wspinaczki", 1, 0),
-         qa14 = ifelse(qa14 == "Przewlekła choroba neurologiczna ", 1, 0),
-         qa15 = ifelse(qa15 == "Osoby chorujące na padaczkę muszą przyjmować leki do końca swojego życia 
-", 1, 0),
+         qa14 = ifelse(qa14 == "Przewlekła choroba neurologiczna", 1, 0),
+         qa15 = ifelse(qa15 == "Osoby chorujące na padaczkę muszą przyjmować leki do końca swojego życia", 1, 0),
          qb1 = ifelse(qb1 == "FALSE", 1, 0),
          qb2 = ifelse(qb2 == "FALSE", 1, 0),
          qb3 = ifelse(qb3 == "TRUE", 1, 0),
@@ -66,20 +69,20 @@ DF_PAD_2 <- DF_PAD %>%
          qb9 = ifelse(qb9 == "FALSE", 1, 0),
          qb10 = ifelse(qb10 == "FALSE", 1, 0),
          qb11 = ifelse(qb11 == "Wszystkie odpowiedzi są prawidłowe", 1, 0),
-         qb12 = ifelse(qb12 == "Wszystkie odpowiedzi są prawidłowe ", 1, 0),
+         qb12 = ifelse(qb12 == "Wszystkie odpowiedzi są prawidłowe", 1, 0),
          qb13 = ifelse(qb13 == "Może uprawiać większość dyscyplin sportowych za wyjątkiem nurkowania i wspinaczki", 1, 0),
-         qb14 = ifelse(qb14 == "Przewlekła choroba neurologiczna ", 1, 0),
-         qb15 = ifelse(qb15 == "Osoby chorujące na padaczkę muszą przyjmować leki do końca swojego życia 
-", 1, 0)) 
+         qb14 = ifelse(qb14 == "Przewlekła choroba neurologiczna", 1, 0),
+         qb15 = ifelse(qb15 == "Osoby chorujące na padaczkę muszą przyjmować leki do końca swojego życia", 1, 0)) 
 
 str(DF_PAD_2)
 table(DF_PAD$narodowosc)
 ```
 
 ```{r}
-
-table(DF_SM$wiek)
-table(DF_SM$plec) #16 innych
+table(DF_PAD$wiek)
+table(DF_PAD_2$wiek)
+table(DF_PAD$plec) 
+table(DF_PAD$plec, DF_PAD$wiek)
 
 DF_PAD_2 <- DF_PAD_2 %>% 
   filter(plec == "Kobieta" | plec == "Mężczyzna") %>% 
@@ -92,7 +95,7 @@ DF_PAD_2 <- DF_PAD_2 %>%
     wiek == "Powyżej 20 lat" ~ 20)) %>% 
   filter(wiek == 14| wiek == 15 | wiek == 16 | wiek == 17 | wiek == 18)
 
-#wyrzucamy 2 osoby w wieku 20 lat
+#wyrzucamy 3 osoby w wieku 20 lat (w tym jedna osoba z płcią inną)
 #wyrzucamy 18 osób z płcią inna
 
 ```
@@ -119,7 +122,15 @@ DF_PAD_2 %>%
   group_by(warunek, plec) %>% 
   summarise(N=n())
 
-table(DF_PAD_2$plec)
+DF_PAD_2 %>% 
+  group_by(warunek) %>% 
+  summarise(N=n())
+
+DF_PAD_2 %>% 
+  group_by(plec) %>% 
+  summarise(N=n())
+
+table(DF_PAD$plec)
 
 DF_PAD_2 %>% 
   group_by( D4) %>% 
@@ -132,6 +143,17 @@ DF_PAD_2 %>%
 DF_PAD_2 %>% 
   summarise(M = round(mean(wiek),2), SD =  round(sd(wiek),2)) 
 
+x - 75
+100 220
+
+100 - (75*100)/220
+100 - (14*100)/65
+100 - (68*100)/265
+
+100 - (157*100)/550
+
+
+(305*100)/550
 ```
 
 ## Wyniki dwóch części kwestionariusza
@@ -157,12 +179,65 @@ DF_PAD_3 <- DF_PAD_2 %>%
 alpha(DF_PAD_2 %>% 
   select(starts_with("qa")))
 
-# raw_alpha = 0.6956587 = 0.70
+# raw_alpha = 0.7026256 = 0.70
 
 alpha(DF_PAD_2 %>% 
   select(starts_with("qb")))
 
-# raw_alpha = 0.692472 = 0.70
+# raw_alpha = 0.7433301 = 0.74
+
+```
+
+## Rzetelność kwestionariusza - EFA
+
+```{r}
+
+library(nFactors)
+library(GPArotation)
+library(psych)
+
+
+
+answers_A <- DF_PAD_2 %>% 
+  select(starts_with("QA"))
+
+
+Korelacja <- cor(answers_A,
+                 method = "spearman",
+                 use = "pairwise.complete.obs")
+ev_Dane <- eigen(Korelacja) 
+ap_Dane <- parallel(subject=nrow(answers_A),
+                    var=ncol(answers_A),
+                    rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
+nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji 
+                  aparallel = ap_Dane$eigen$qevpea) 
+plotnScree(nS_Dane)
+
+#macież korelacji
+cor_answers_A<-cor(answers_A, method = "spearman")
+View(cor_answers_A) 
+
+sum(cor(cor_answers_A)<0.3)/length(cor_answers_A-14)*100 #87% korelacji jest poniżej 0.3
+(sum(cor(cor_answers_A)>0.9)-14)/length(cor_answers_A-14)*100 # 0.44% korelacji jest powyżej 0.9
+
+#wyznacznik macierzy korelacji
+det(cor(answers_A)) #0.1307211
+
+#kryterium KMO
+KMO(cor(answers_A))
+
+#czy macierz jest macierzą identycznościową
+cortest.bartlett(cor(answers_A)) #H0: macierz korelacji jest identycznościowa - dane nie mają ze sobą nic wspólnego; mamy podstawy do orzucenia H0
+
+#właściwa EFA
+fit_1<-fa(r = answers_A, nfactors = 4, rotate = "varimax", cor = "tet")
+print(fit_1)
+
+# powinna byc dla danych tetrachorycznych, ale wtedy nie wychodzi; do przemyslenia 
+# jest sens badać jeden wynik 
+# ile wyszło czynników + dodajemy ładunki czynnikowe
+# model 1 czynnikowy jest gorzej doapsowany niż 2
+# w załączniku
 
 ```
 
@@ -216,7 +291,7 @@ view(pivot_df_pad)
 str(pivot_df_pad)
 ```
 
-## Testy t 
+## Testy t
 
 ```{r}
 
@@ -261,7 +336,7 @@ ggplot(DF_PAD_4, aes(x = D9, y = wiedza)) +
   theme_bw()
 ```
 
-## ANOVA dla warunków 
+## ANOVA dla warunków
 
 ```{r}
 
@@ -279,11 +354,3 @@ ggplot(DF_PAD_3, aes(x = warunek, y = SUM_A)) +
   ylab("Wynik testu przed prezentacją")
 
 ```
-
-
-
-
-
-
-
-
