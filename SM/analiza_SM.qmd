@@ -3,7 +3,7 @@ title: "SManaliza"
 author: Zofia Mikołajczak
 format: docx
 editor: visual
-date-modified: 23.08
+date-modified: 9.09
 ---
 
 ## Pakiety
@@ -186,10 +186,10 @@ DF_SM_3 <- DF_SM_2 %>%
 install.packages("stringr")
 library(stringr)
 
-DF_SM_D7 <- DF_SM %>%
+DF_SM_D7 <- DF_SM_4 %>%
   filter(str_detect(D7, "Internet| Szkoła | Rodzina | Znajomi"))
 
-DF_SM_D7 <- DF_SM_3 %>% 
+DF_SM_D7 <- DF_SM_4 %>% 
   mutate(D7_internet = str_detect(D7,"Internet"), 
          D7_szkola = str_detect(D7,"Szkoła"), 
          D7_rodzina = str_detect(D7, "Rodzina"), 
@@ -202,27 +202,27 @@ DF_SM_D7 <- DF_SM_3 %>%
 
 internet <- DF_SM_D7 %>% 
   filter(D7_internet) %>% 
-  select(SUM_A) %>% 
+  select(wiedza) %>% 
   mutate(zrodlo = "Internet")
 
 szkola <- DF_SM_D7 %>% 
   filter(D7_szkola) %>% 
-  select(SUM_A) %>% 
+  select(wiedza) %>% 
   mutate(zrodlo = "Szkoła")
 
 rodzina <- DF_SM_D7 %>% 
   filter(D7_rodzina) %>% 
-  select(SUM_A) %>% 
+  select(wiedza) %>% 
   mutate(zrodlo = "Rodzina")
 
 inne <- DF_SM_D7 %>% 
   filter(D7_inne) %>% 
-  select(SUM_A) %>% 
+  select(wiedza) %>% 
   mutate(zrodlo = "Inne")
 
 znajomi <- DF_SM_D7 %>% 
   filter(D7_znajomi) %>% 
-  select(SUM_A) %>% 
+  select(wiedza) %>% 
   mutate(zrodlo = "Znajomi")
 
 
@@ -333,6 +333,15 @@ ggplot(DF_SM_4, aes(x = SUM_A)) +
   ylab("Gęstość") +
   xlab("Wynik testu przed prezentacją")
 
+# wykres gęstości po perezentacji dla płci
+
+ggplot(DF_SM_4, aes(x = wiedza)) + 
+  geom_density(aes(color = plec)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  ylab("Gęstość") +
+  xlab("Różnica wyników kwestionariuszy")
+
 # wykres gęstości przed prezentacją dla profilu 
 
 ggplot(DF_SM_4, aes(x = SUM_A)) +
@@ -342,6 +351,16 @@ ggplot(DF_SM_4, aes(x = SUM_A)) +
   theme(legend.title = element_text("Profil klasy")) +
   ylab("Gęstość") +
   xlab("Wynik testu przed prezentacją")
+
+# wykres gęstości po prezentacji dla profilu
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density(aes(color = D5)) +
+  theme_bw() +
+  theme(legend.position="bottom") + 
+  theme(legend.title = element_text("Profil klasy")) +
+  ylab("Gęstość") +
+  xlab("Różnica wyników kwestionariuszy")
 
 # wykres gęstości przed prezentacją i po prezentacji 
 
@@ -376,16 +395,65 @@ view(pivot_df)
 str(pivot_df)
 ```
 
-## Test t - tu mamy wzięte złe zmienne; powinnyśmy liczyć test t dla sum A i dla różnicy midzy sum A i sum B czyli dla efektu uczenia się; więc robienie tego na pivotowanej bazie nie ma większego sensu; ona była nam jedynie przydatna do ych wykresów gdzie chciałyśmy nanieść na sibeie wyniki dwóch części kwestionariusza
+## Test t -
+
+tu mamy wzięte złe zmienne; powinnyśmy liczyć test t dla sum A i dla różnicy midzy sum A i sum B czyli dla efektu uczenia się; więc robienie tego na pivotowanej bazie nie ma większego sensu; ona była nam jedynie przydatna do ych wykresów gdzie chciałyśmy nanieść na sibeie wyniki dwóch części kwestionariusza
+
+# pkt 1 - zmienne a sum A
 
 ```{r}
 
-hist(pivot_df$wynik)
-summary(DF_SM_3$SUM_A)
-summary(DF_SM_3$SUM_B)
+#dla płci
+
+df_plec_m <- DF_SM_4 %>% 
+  filter(plec == "Mężczyzna")
+
+df_plec_k <- DF_SM_4 %>% 
+  filter(plec == "Kobieta")
+
+
+#H0: wariancje są homogeniczne - nie mamy podstaw do odrzucenia = wariancje są homogeniczne
+
+var.test(df_plec_m$SUM_A, df_plec_k$SUM_A)
+
+t.test(df_plec_m$SUM_A, df_plec_k$SUM_A,
+       paired = FALSE,   
+       var.equal = TRUE,
+       conf.level = 0.95)
+
+cohensD(df_plec_m$SUM_A, df_plec_k$SUM_A)
+
+```
+
+```{r}
+
+# dla profilu klasy
+
+df_D5i <- DF_SM_4 %>% 
+  filter(D5 == "Inny")
+
+df_D5b <- DF_SM_4 %>% 
+  filter(D5 == "Z rozszerzoną biologią")
+
+
+var.test(df_D5i$SUM_A, df_D5b$SUM_A)
+#mamy podstawy do odrzucenia hipotezy zerowej == wariancje są heterogeniczne
+
+t.test(df_D5i$SUM_A, df_D5b$SUM_A,
+       paired = FALSE,   
+       var.equal = FALSE,
+       conf.level = 0.95)
+
+cohensD(df_D5i$SUM_A, df_D5b$SUM_A)
+
+
+```
+
+# pkt 2 testy a wynik (nauki)
+
+```{r}
 
 #dla zmiennej test - t.test dla prób zależnych
-
 
 pivot_df_testA <- pivot_df %>% 
   filter(test == "A")
@@ -404,81 +472,133 @@ t.test(pivot_df_testA$wynik, pivot_df_testB$wynik,
        conf.level = 0.95)
 
 cohensD(pivot_df_testA$wynik, pivot_df_testB$wynik) 
+```
 
-#d cohena - doliczyć i zaraportować
+# pkt 3 - zmienne demograficzne a wynik (nauki)
+
+```{r}
+
+#płeć
+
+DF_3_M<- DF_SM_4 %>% 
+  filter(plec == "Mężczyzna") %>% 
+  select(wiedza)
+
+DF_3_K<- DF_SM_4 %>% 
+  filter(plec == "Kobieta") %>% 
+  select(wiedza)
 
 
-#dla zmiennej płeć - t.test dla zmiennych niezależnych
+var.test(DF_3_M$wiedza, DF_3_K$wiedza)
+#wariancje są homogeniczne
 
-pivot_df_plec_m <- pivot_df %>% 
-  filter(plec == "Mężczyzna")
-
-pivot_df_plec_k <- pivot_df %>% 
-  filter(plec == "Kobieta")
-
-
-#H0: wariancje są homogeniczne - nie mamy podstaw do odrzucenia = wariancje są homogeniczne
-
-var.test(pivot_df_plec_m$wynik, pivot_df_plec_k$wynik)
-
-
-t.test(pivot_df_plec_m$wynik, pivot_df_plec_k$wynik,
+t.test(DF_3_M$wiedza, DF_3_K$wiedza,
        paired = FALSE,   
        var.equal = TRUE,
        conf.level = 0.95)
 
-cohensD(pivot_df_plec_m$wynik, pivot_df_plec_k$wynik)
+cohensD(DF_3_M$wiedza, DF_3_K$wiedza)
 
-#dla zmiennej D5 - t.test dla prób niezależnych
 
-table(pivot_df$D5)
+#profil klasy
 
-pivot_df_D5i <- pivot_df %>% 
-  filter(D5 == "Inny")
+DF_3_Inny<- DF_SM_4 %>% 
+  filter(D5 == "Inny") 
 
-pivot_df_D5b <- pivot_df %>% 
+DF_3_Biol<- DF_SM_4  %>% 
   filter(D5 == "Z rozszerzoną biologią")
 
+var.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
+#wariancje są heterogeniczne
 
-var.test(pivot_df_D5b$wynik, pivot_df_D5i$wynik)
-#mamy podstawy do odrzucenia hipotezy zerowej == wariancje są heterogeniczne
-
-t.test(pivot_df_D5b$wynik, pivot_df_D5i$wynik,
+t.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza,
        paired = FALSE,   
        var.equal = FALSE,
        conf.level = 0.95)
 
-cohensD(pivot_df_D5b$wynik, pivot_df_D5i$wynik)
+cohensD(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
 
-#nieistotne
-#ile osób jest w grupach 
-
-nrow(pivot_df_D5b) 
+# jest istotna różnica w tych grupach!
 ```
 
-## Modele liniowe dla efektu prezentacji
+## Modele liniowe
+
+# dla SUM_A - PKT 1
+
+```{r}
+#pkt 1
+#model 11
+mod11 <- lm(SUM_A ~ D4, data = DF_SM_4)
+summary(mod11)
+
+plot(mod11, which = 1)
+plot(mod11, which = 2)
+plot(mod11, which = 3)
+
+ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Miejsce zamieszkania")+
+  ylab("Wiedza przed obejrzeniem filmu") 
+
+
+#model 22
+table(DF_SM_4$D9)
+
+mod22 <- lm(SUM_A ~ D9, data = DF_SM_4)
+summary(mod22)
+
+plot(mod22, which = 1)
+plot(mod22, which = 2)
+plot(mod22, which = 3)
+
+ggplot(DF_SM_4, aes(x = D9, y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Deklarowana wiedza o SM")+
+  ylab("Wiedza przed obejrzeniem filmu")
+
+
+#model 33
+mod33 <- lm(SUM_A ~ as.factor(wiek), data = DF_SM_4)
+summary(mod33)
+
+plot(mod33, which = 1)
+plot(mod33, which = 2)
+plot(mod33, which = 3)
+
+ggplot(DF_SM_4, aes(x = as.factor(wiek), y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Wiek")+
+  ylab("Wiedza przed obejrzeniem filmu")
+
+```
+
+# dla wiedzy - efekt prezentacji - PKT 3
 
 ```{r}
 
-#pkt 3 
+#model1 - miejsce zamieszaknia
 
-#model1
-DF_SM_4 <- DF_SM_3 %>% 
-  mutate(wiedza = SUM_B - SUM_A)
-
-
-mod1 <- lm(wiedza ~ D4, data = DF_SM_4) #miejsce zamieszkania
+mod1 <- lm(wiedza ~ D4, data = DF_SM_4)
 summary(mod1)
 
 plot(mod1, which = 1)
 plot(mod1, which = 2)
 plot(mod1, which = 3)
 
+ggplot(DF_SM_4, aes(x = D4, y = wiedza)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Miejsce zamieszaknia")+
+  ylab("Różnica wyników kwestionariuszy")
 
-#model 2
+
+#model 2 - jak oceniasz swoją wiedzę
 table(DF_SM_4$D9)
 
-mod2 <- lm(wiedza ~ D9, data = DF_SM_4) #deklarowana wiedza
+mod2 <- lm(wiedza ~ D9, data = DF_SM_4)
 summary(mod2)
 
 plot(mod2, which = 1)
@@ -487,7 +607,9 @@ plot(mod2, which = 3)
 
 ggplot(DF_SM_4, aes(x = D9, y = wiedza)) +
   geom_boxplot() +
-  theme_bw()
+  theme_bw()+
+  xlab("Deklarowana wiedza o SM")+
+  ylab("Wiedza")
 
 #ostatecznie wychodzi nam, że miejcsce zamieszkania nie ma znaczenia; jest różnica w zależności od poziomu wiedzy przed lekcją - i założenia do tego modelu są spełnjione; wszystko śmiga
 
@@ -495,42 +617,32 @@ ggplot(DF_SM_4, aes(x = D9, y = wiedza)) +
 
 # estimate, std error, intercepr = wyraz wolny; statystyka f i jej p-value; r2
 
-#pkt 1 
+#model 3 - wiek 
+
+table(DF_SM_4$wiek)
 
 
-```
-
-## Modele liniowe dla SUM_A
-
-```{r}
-#pkt 1
-
-
-#model 3
-mod3 <- lm(SUM_A ~ D4, data = DF_SM_4)
+mod3 <- lm(wiedza ~ as.factor(wiek), data = DF_SM_4)
 summary(mod3)
 
 plot(mod3, which = 1)
 plot(mod3, which = 2)
 plot(mod3, which = 3)
 
-
-#model 2
-table(DF_SM_4$D9)
-
-mod4 <- lm(SUM_A ~ D9, data = DF_SM_4)
-summary(mod4)
-
-plot(mod4, which = 1)
-plot(mod4, which = 2)
-plot(mod4, which = 3)
+ggplot(DF_SM_4, aes(x = as.factor(wiek), y = wiedza)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Wiek")+
+  ylab("Różnica wyników kwestionariuszy")
 ```
 
-## ANOVA dla zmiennej D7
+ggplot(DF_SM_4, aes(x = D4, y = wiedza)) + geom_boxplot() + theme_bw()+ xlab("Miejsce zamieszaknia")+ ylab("Różnica wyników kwestionariuszy")
+
+## ANOVA dla zmiennej D7 (PKT 1)
 
 ```{r}
 
-aov_1 <- aov(SUM_A ~ zrodlo, data = D7)
+aov_1 <- aov(SUM_A~ zrodlo, data = D7)
 summary(aov_1)
 
 #ANOVA jest nieistotna statystycznie
@@ -551,10 +663,33 @@ ggplot(D7, aes(x = zrodlo, y = SUM_A)) +
 
 ```
 
-## ANOVA dla warunków
+## ANOVA dla zmiennej D7 (PKT 3) - to imo też nie ma sensu
 
 ```{r}
-aov_2<-aov(SUM_A ~ warunek, data = DF_SM_3)
+
+aov_11 <- aov(wiedza~ zrodlo, data = D7)
+summary(aov_11)
+
+#ANOVA jest nieistotna statystycznie
+
+plot(aov_11)
+
+# box plot
+
+ggplot(D7, aes(x = zrodlo, y = wiedza)) +
+  geom_boxplot() + 
+  theme_bw() +
+  xlab("Deklarowane źródło wiedzy") +
+  ylab("Wiedza")
+
+```
+
+## ANOVA dla warunków
+
+# czy w którymś z warunków lepiej się uczyli
+
+```{r}
+aov_2<-aov(wiedza ~ warunek, data = DF_SM_4)
 summary(aov_2)
 
 #równiż nie istotna statystycznue
@@ -563,10 +698,10 @@ plot(aov_2)
 
 #mamy zaburzoną normalność 
 
-ggplot(DF_SM_3, aes(x = warunek, y = SUM_A)) +
+ggplot(DF_SM_4, aes(x = warunek, y = wiedza)) +
   geom_boxplot() + 
   theme_bw() +
   xlab("Warunek") +
-  ylab("Wynik testu przed prezentacją")
+  ylab("Wynik testu po prezentacji")
 
 ```
