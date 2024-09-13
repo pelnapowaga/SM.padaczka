@@ -60,9 +60,6 @@ DF_SM<-rbind(SM, PA_SM, SM_PA)
 
 ```{r}
 
-table(DF_SM$wiek)
-table(DF_SM$plec)
-
 DF_SM <-DF_SM %>% 
   filter(plec == "Kobieta" | plec == "Mężczyzna") %>% 
   mutate(wiek = case_when(
@@ -73,8 +70,6 @@ DF_SM <-DF_SM %>%
     wiek == "18-19 lat" ~ 18,
     wiek == "Powyżej 20 lat" ~ 20)) %>% 
   filter(wiek == 14| wiek == 15 | wiek == 16 | wiek == 17 | wiek == 18)
-
-table(DF_SM$wiek)
 
 #wywalamy powyżej 20 rż.; zostaje nam 491 obserwacji 
     
@@ -127,8 +122,6 @@ DF_SM %>%
 
 ```{r}
 
-view(a)
-
 DF_SM_2<-DF_SM %>% 
   mutate(QA1 = ifelse (QA1 == 'Immunologicznego', 1, 0),
          QA2 = ifelse (QA2 == 'Przyczyny stwardnienia rozsianego nie są do końca znane', 1, 0),
@@ -176,6 +169,15 @@ DF_SM_3 <- DF_SM_2 %>%
            select(starts_with("QB")) %>% 
            rowSums) %>% 
   select(-starts_with(c("QA", "QB")))
+
+```
+
+## DF_SM_4
+
+```{r}
+
+DF_SM_4 <- DF_SM_3 %>% 
+  mutate(wiedza = SUM_B - SUM_A)
 
 ```
 
