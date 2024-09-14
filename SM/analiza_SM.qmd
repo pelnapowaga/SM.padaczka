@@ -258,15 +258,20 @@ library(nFactors)
 library(GPArotation)
 library(psych)
 
+```
+
+```{r}
+
 answers_A <- DF_SM_2 %>% 
   select(starts_with("QA"))
 
 Korelacja <- cor(answers_A,
                  method = "spearman",
                  use = "pairwise.complete.obs")
+
 ev_Dane <- eigen(Korelacja) 
-ap_Dane <- parallel(subject=nrow(answers),
-                    var=ncol(answers),
+ap_Dane <- parallel(subject=nrow(answers_A),
+                    var=ncol(answers_A),
                     rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
 nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji 
                   aparallel = ap_Dane$eigen$qevpea) 
@@ -280,7 +285,7 @@ sum(cor(cor_answers_A)<0.3)/length(cor_answers_A-14)*100 #77% korelacji jest pon
 (sum(cor(cor_answers_A)>0.9)-14)/length(cor_answers_A-14)*100 #nie ma żadnej korelacji powyżej 0.9
 
 #wyznacznik macierzy korelacji
-det(cor(answers_A)) #0.009155857
+det(cor(answers_A)) #0.00897695
 
 #kryterium KMO
 KMO(cor(answers_A))
@@ -289,7 +294,7 @@ KMO(cor(answers_A))
 cortest.bartlett(cor(answers_A)) #H0: macierz korelacji jest identycznościowa - dane nie mają ze sobą nic wspólnego; mamy podstawy do orzucenia H0
 
 #właściwa EFA
-fit_1<-fa(r = answers_A, nfactors = 1, rotate = "varimax", cor = "tet")
+fit_1<-fa(r = answers_A, nfactors = 2, rotate = "varimax", cor = "tet")
 print(fit_1)
 
 # powinna byc dla danych tetrachorycznych, ale wtedy nie wychodzi; do przemyslenia 
@@ -301,7 +306,7 @@ print(fit_1)
 
 ```
 
-## Wykres gęstości wyników: pre-test/re-test + płeć + demografia - tu jest coś skopane
+## Wykres gęstości wyników: pre-test/re-test + płeć + demografia
 
 ```{r}
 
@@ -316,7 +321,8 @@ ggplot(ggplot_df, aes(x = wynik)) +
   geom_density(aes(color = test)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
-  ylab("gęstość") +
+  ylab("Gęstość") +
+  xlab("Wynik testu") +
   facet_wrap(vars(D4))
 
 
@@ -370,7 +376,8 @@ ggplot(ggplot_df, aes(x = wynik)) +
   geom_density(aes(color = test)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
-  ylab("gęstość") 
+  ylab("Gęstość") +
+  xlab("Wynik testu")
 
 # wykres pudełkowy  przed prezentacją a miejsce zamieszkania
 
@@ -380,7 +387,13 @@ ggplot(ggplot_df, aes(x = wynik)) +
   xlab("Wielkość miejsca zamieszkania") + 
   ylab("Wynik testu przed prezentacją")
 
+# wykres pudełkowy  przed prezentacją a wiek
 
+ ggplot(DF_SM_4, aes(x = as.factor(wiek), y = wiedza)) +
+  geom_boxplot() +
+  theme_bw() +
+  xlab("Wiek") + 
+  ylab("Wynik testu przed prezentacją")
 
 ```
 
@@ -425,6 +438,11 @@ t.test(df_plec_m$SUM_A, df_plec_k$SUM_A,
 
 cohensD(df_plec_m$SUM_A, df_plec_k$SUM_A)
 
+# SD
+
+sd(df_plec_m$SUM_A)
+sd(df_plec_k$SUM_A)
+
 ```
 
 ```{r}
@@ -448,6 +466,10 @@ t.test(df_D5i$SUM_A, df_D5b$SUM_A,
 
 cohensD(df_D5i$SUM_A, df_D5b$SUM_A)
 
+# SD
+
+sd(df_D5i$SUM_A)
+sd(df_D5b$SUM_A)
 
 ```
 
@@ -501,6 +523,11 @@ t.test(DF_3_M$wiedza, DF_3_K$wiedza,
 
 cohensD(DF_3_M$wiedza, DF_3_K$wiedza)
 
+# SD
+
+sd(DF_3_M$wiedza)
+sd(DF_3_K$wiedza)
+
 
 #profil klasy
 
@@ -521,6 +548,11 @@ t.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza,
 cohensD(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
 
 # jest istotna różnica w tych grupach!
+
+# SD
+
+sd(DF_3_Inny$wiedza)
+sd(DF_3_Biol$wiedza)
 ```
 
 ## Modele liniowe

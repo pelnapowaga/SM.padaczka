@@ -10,19 +10,20 @@ date-modified: 25.08
 library(readxl)
 library(tidyverse)
 library(psych)
+library(lsr)
 
 ```
 
 ## Przygotowanie bazy
 
 ```{r}
-padaczka <- read_excel("padaczka.xlsx")  %>% 
+padaczka <- read_excel("bazy_danych/padaczka.xlsx")  %>% 
   mutate(warunek = "PA") 
 
-padaczka_sm <- read_excel("padaczka_sm.xlsx") %>% 
+padaczka_sm <- read_excel("bazy_danych/padaczka_sm.xlsx") %>% 
   mutate(warunek = "PA_SM") 
 
-sm_padaczka <- read_excel("sm_padaczka.xlsx") %>% 
+sm_padaczka <- read_excel("bazy_danych/sm_padaczka.xlsx") %>% 
   mutate(warunek = "SM_PA") 
 
 ```
@@ -96,7 +97,9 @@ DF_PAD_2 <- DF_PAD_2 %>%
   filter(wiek == 14| wiek == 15 | wiek == 16 | wiek == 17 | wiek == 18)
 
 #wyrzucamy 3 osoby w wieku 20 lat (w tym jedna osoba z płcią inną)
-#wyrzucamy 18 osób z płcią inna
+#wyrzucamy 18 osób z płcią inna - 1 = 17
+
+#na tym etapie z bazy danych usuwamy 20 osób
 
 ```
 
@@ -168,7 +171,8 @@ DF_PAD_3 <- DF_PAD_2 %>%
            DF_PAD_2 %>% 
            select(starts_with("qb")) %>% 
            rowSums) %>% 
-  select(-starts_with(c("qa", "qb")))
+  select(-starts_with(c("qa", "qb"))) %>% 
+  mutate(wiedza = SUM_B - SUM_A)
 
 ```
 
@@ -195,8 +199,6 @@ alpha(DF_PAD_2 %>%
 library(nFactors)
 library(GPArotation)
 library(psych)
-
-
 
 answers_A <- DF_PAD_2 %>% 
   select(starts_with("QA"))
@@ -293,8 +295,155 @@ str(pivot_df_pad)
 
 ## Testy t
 
+#pkt 1 - testy t dla plec i profil klasy przed prezentacją
 ```{r}
 
+#dla PŁCI
+
+df_plec_m <- DF_PAD_3 %>% 
+  filter(plec == "Mężczyzna")
+
+df_plec_k <- DF_PAD_3 %>% 
+  filter(plec == "Kobieta")
+
+
+#H0: wariancje są homogeniczne -  mamy podstawy do odrzucenia = wariancje są homogeniczne
+
+var.test(df_plec_m$SUM_A, df_plec_k$SUM_A)
+
+t.test(df_plec_m$SUM_A, df_plec_k$SUM_A,
+       paired = FALSE,   
+       var.equal = FALSE,
+       conf.level = 0.95)
+
+#nie istotny
+
+cohensD(df_plec_m$SUM_A, df_plec_k$SUM_A)
+
+# SD
+
+sd(df_plec_m$SUM_A)
+sd(df_plec_k$SUM_A)
+
+
+
+```
+
+```{r}
+
+# dla profilu klasy
+
+df_D5i <- DF_PAD_3 %>% 
+  filter(D5 == "Inny")
+
+df_D5b <- DF_PAD_3 %>% 
+  filter(D5 == "Z rozszerzoną biologią")
+
+
+var.test(df_D5i$SUM_A, df_D5b$SUM_A)
+#nie mamy podstaw do odrzucenia hipotezy zerowej == wariancje są heterogeniczne
+
+t.test(df_D5i$SUM_A, df_D5b$SUM_A,
+       paired = FALSE,   
+       var.equal = TRUE,
+       conf.level = 0.95)
+
+#istotny i to bardzo
+
+cohensD(df_D5i$SUM_A, df_D5b$SUM_A)
+
+# SD
+
+sd(df_D5i$SUM_A)
+sd(df_D5b$SUM_A)
+
+```
+
+#pkt 2 - testy t dla przed i po prezentacji 
+```{r}
+
+#dla zmiennej test - t.test dla prób zależnych
+
+pivot_df_testA <- pivot_df_pad %>% 
+  filter(test == "A")
+
+pivot_df_testB <- pivot_df_pad %>% 
+  filter(test == "B")
+
+#sprawdzamy homogeniczność wariancji; 
+#H0: wariancje są homogeniczne - mamy podstawy do odrzucenia - wariancje są heterogeniczne
+
+var.test(pivot_df_testA$wynik, pivot_df_testB$wynik)
+
+t.test(pivot_df_testA$wynik, pivot_df_testB$wynik,
+       paired = TRUE,   
+       var.equal = FALSE,
+       conf.level = 0.95)
+
+#istotny
+
+cohensD(pivot_df_testA$wynik, pivot_df_testB$wynik) 
+
+```
+
+#pkt 3 - testy t dla plec i profil klasy po prezentacji
+```{r}
+#płeć
+
+DF_3_M<- DF_PAD_3 %>% 
+  filter(plec == "Mężczyzna") %>% 
+  select(wiedza)
+
+DF_3_K<- DF_PAD_3 %>% 
+  filter(plec == "Kobieta") %>% 
+  select(wiedza)
+
+
+var.test(DF_3_M$wiedza, DF_3_K$wiedza)
+#wariancje są homogeniczne - nieistotny
+
+t.test(DF_3_M$wiedza, DF_3_K$wiedza,
+       paired = FALSE,   
+       var.equal = TRUE,
+       conf.level = 0.95)
+
+#istotny
+
+cohensD(DF_3_M$wiedza, DF_3_K$wiedza)
+
+# SD
+
+sd(DF_3_M$wiedza)
+sd(DF_3_K$wiedza)
+```
+
+```{r}
+#profil klasy
+
+DF_3_Inny<- DF_PAD_3 %>% 
+  filter(D5 == "Inny") 
+
+DF_3_Biol<- DF_PAD_3  %>% 
+  filter(D5 == "Z rozszerzoną biologią")
+
+var.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
+#wariancje są heterogeniczne - istotny
+
+t.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza,
+       paired = FALSE,   
+       var.equal = FALSE,
+       conf.level = 0.95)
+
+#istotny
+
+cohensD(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
+
+# jest istotna różnica w tych grupach!
+
+# SD
+
+sd(DF_3_Inny$wiedza)
+sd(DF_3_Biol$wiedza)
 
 ```
 
@@ -355,4 +504,63 @@ ggplot(DF_PAD_3, aes(x = warunek, y = SUM_A)) +
 
 ```
 
+## ANOVA dla miejsca zamieszkania 
+```{r}
+# przed prezentacją
+
+aov_1_D4<-aov(SUM_A ~ D4, data = DF_PAD_3)
+plot(aov_1_D4)
+
+ggplot(DF_PAD_3, aes(x = D4, y = SUM_A)) +
+  geom_boxplot() + 
+  theme_bw() + 
+  xlab("Wielkość miejsca zamieszkania") + 
+  ylab("Wynik przed prezentacją")
+
+# po prezentacji
+
+aov_2_D4<-aov(SUM_B ~ D4, data = DF_PAD_3)
+plot(aov_2_D4)
+
+ggplot(DF_PAD_3, aes(x = D4, y = SUM_B)) +
+  geom_boxplot() + 
+  theme_bw() + 
+  xlab("Wielkość miejsca zamieszkania") + 
+  ylab("Wynik przed prezentacją")
+
+```
+
+## ANOVA dla wieku
+
+```{r}
+#przed prezentacją
+
+DF_PAD_3$wiek<-as.factor(DF_PAD_3$wiek)
+
+aov_1_wiek<-aov(SUM_A ~ wiek, data = DF_PAD_3)
+plot(aov_1_wiek)
+
+ggplot(DF_PAD_3, aes(x = wiek, y = SUM_A)) +
+  geom_boxplot() + 
+  theme_bw() + 
+  xlab("Wielkość miejsca zamieszkania") + 
+  ylab("Wynik przed prezentacją")
+
+#po prezentacji
+
+aov_2_wiek<-aov(SUM_B ~ wiek, data = DF_PAD_3)
+plot(aov_2_wiek)
+
+ggplot(DF_PAD_3, aes(x =wiek, y = SUM_B)) +
+  geom_boxplot() + 
+  theme_bw() + 
+  xlab("Wielkość miejsca zamieszkania") + 
+  ylab("Wynik przed prezentacją")
+
+```
+
 zostało nam wykonanie testów t :) :)
+
+na ten moment musimy pozmieniać tylko modele liniowe na ANOVA (tak jak poprawki olecha, wiek i miejsce zamieszkania)
+
+
