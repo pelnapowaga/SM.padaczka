@@ -1,9 +1,9 @@
 ---
 title: "SManaliza"
-author: Zofia Mikołajczak
+author: Agata Adamczyk
 format: docx
 editor: visual
-date-modified: 9.09
+date-modified: 19.09
 ---
 
 ## Pakiety
@@ -339,7 +339,14 @@ ggplot(DF_SM_4, aes(x = SUM_A)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
   ylab("Gęstość") +
-  xlab("Wynik testu przed prezentacją")
+  xlab("Wynik testu przed prezentacją") +
+  geom_vline(aes(xintercept = mean(k$SUM_A)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(m$SUM_A)), color = "#00CED1", linetype="dashed")
+
+k<-DF_SM_4 %>% filter(plec == "Kobieta")
+m<-DF_SM_4 %>% filter(plec == "Mężczyzna")
+
+
 
 # wykres gęstości po perezentacji dla płci
 
@@ -348,7 +355,9 @@ ggplot(DF_SM_4, aes(x = wiedza)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
   ylab("Gęstość") +
-  xlab("Różnica wyników kwestionariuszy")
+  xlab("Różnica wyników kwestionariuszy") +
+  geom_vline(aes(xintercept = mean(k$SUM_B)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(m$SUM_B)), color = "#00CED1", linetype="dashed")
 
 # wykres gęstości przed prezentacją dla profilu 
 
@@ -358,7 +367,12 @@ ggplot(DF_SM_4, aes(x = SUM_A)) +
   theme(legend.position="bottom") + 
   theme(legend.title = element_text("Profil klasy")) +
   ylab("Gęstość") +
-  xlab("Wynik testu przed prezentacją")
+  xlab("Wynik testu przed prezentacją") +
+  geom_vline(aes(xintercept = mean(I$SUM_A)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(B$SUM_A)), color = "#00CED1", linetype="dashed") 
+
+B <- DF_SM_4 %>% filter(D5 == "Z rozszerzoną biologią")
+I <- DF_SM_4 %>% filter(D5 == "Inny")
 
 # wykres gęstości po prezentacji dla profilu
 
@@ -368,7 +382,9 @@ ggplot(DF_SM_4, aes(x = wiedza)) +
   theme(legend.position="bottom") + 
   theme(legend.title = element_text("Profil klasy")) +
   ylab("Gęstość") +
-  xlab("Różnica wyników kwestionariuszy")
+  xlab("Różnica wyników kwestionariuszy") +
+  geom_vline(aes(xintercept = mean(I$SUM_B)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(B$SUM_B)), color = "#00CED1", linetype="dashed") 
 
 # wykres gęstości przed prezentacją i po prezentacji 
 
@@ -377,11 +393,13 @@ ggplot(ggplot_df, aes(x = wynik)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
   ylab("Gęstość") +
-  xlab("Wynik testu")
+  xlab("Wynik testu") +
+  geom_vline(aes(xintercept = mean(SUM_A)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(SUM_B)), color = "#00CED1", linetype="dashed") 
 
 # wykres pudełkowy  przed prezentacją a miejsce zamieszkania
 
- ggplot(DF_SM_4, aes(x = D4, y = wiedza)) +
+ ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
   geom_boxplot() +
   theme_bw() +
   xlab("Wielkość miejsca zamieszkania") + 
@@ -389,14 +407,19 @@ ggplot(ggplot_df, aes(x = wynik)) +
 
 # wykres pudełkowy  przed prezentacją a wiek
 
- ggplot(DF_SM_4, aes(x = as.factor(wiek), y = wiedza)) +
+ ggplot(DF_SM_4, aes(x = as.factor(wiek), y = SUM_A)) +
   geom_boxplot() +
   theme_bw() +
   xlab("Wiek") + 
   ylab("Wynik testu przed prezentacją")
 
 ```
-
+ ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw() +
+  xlab("Wielkość miejsca zamieszkania") + 
+  ylab("Wynik testu przed prezentacją")
+  
 ## Przygotowanie danych do testów: test t i modele liniowe
 
 ```{r}
@@ -459,10 +482,11 @@ df_D5b <- DF_SM_4 %>%
 var.test(df_D5i$SUM_A, df_D5b$SUM_A)
 #mamy podstawy do odrzucenia hipotezy zerowej == wariancje są heterogeniczne
 
-t.test(df_D5i$SUM_A, df_D5b$SUM_A,
+t.test(df_D5b$SUM_A, df_D5i$SUM_A,
        paired = FALSE,   
-       var.equal = FALSE,
-       conf.level = 0.95)
+       var.equal = TRUE,
+       conf.level = 0.95,
+       alternative = "greater")
 
 cohensD(df_D5i$SUM_A, df_D5b$SUM_A)
 
@@ -490,10 +514,11 @@ pivot_df_testB <- pivot_df %>%
 
 var.test(pivot_df_testA$wynik, pivot_df_testB$wynik)
 
-t.test(pivot_df_testA$wynik, pivot_df_testB$wynik,
+t.test( pivot_df_testB$wynik, pivot_df_testA$wynik,
        paired = TRUE,   
        var.equal = FALSE,
-       conf.level = 0.95)
+       conf.level = 0.95,
+       alternative = "greater")
 
 cohensD(pivot_df_testA$wynik, pivot_df_testB$wynik) 
 ```
@@ -505,7 +530,7 @@ cohensD(pivot_df_testA$wynik, pivot_df_testB$wynik)
 #płeć
 
 DF_3_M<- DF_SM_4 %>% 
-  filter(plec == "Mężczyzna") %>% 
+  filter(plec == "Mężczyzna")%>% 
   select(wiedza)
 
 DF_3_K<- DF_SM_4 %>% 
@@ -537,13 +562,14 @@ DF_3_Inny<- DF_SM_4 %>%
 DF_3_Biol<- DF_SM_4  %>% 
   filter(D5 == "Z rozszerzoną biologią")
 
-var.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
+var.test( DF_3_Biol$wiedza, DF_3_Inny$wiedza)
 #wariancje są heterogeniczne
 
-t.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza,
+t.test( DF_3_Biol$wiedza, DF_3_Inny$wiedza,
        paired = FALSE,   
        var.equal = FALSE,
-       conf.level = 0.95)
+       conf.level = 0.95,
+       alternative = "greater")
 
 cohensD(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
 
@@ -560,21 +586,6 @@ sd(DF_3_Biol$wiedza)
 # dla SUM_A - PKT 1
 
 ```{r}
-#pkt 1
-#model 11
-mod11 <- lm(SUM_A ~ D4, data = DF_SM_4)
-summary(mod11)
-
-plot(mod11, which = 1)
-plot(mod11, which = 2)
-plot(mod11, which = 3)
-
-ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
-  geom_boxplot() +
-  theme_bw()+
-  xlab("Miejsce zamieszkania")+
-  ylab("Wiedza przed obejrzeniem filmu") 
-
 
 #model 22
 table(DF_SM_4$D9)
@@ -612,22 +623,6 @@ ggplot(DF_SM_4, aes(x = as.factor(wiek), y = SUM_A)) +
 # dla wiedzy - efekt prezentacji - PKT 3
 
 ```{r}
-
-#model1 - miejsce zamieszaknia
-
-mod1 <- lm(wiedza ~ D4, data = DF_SM_4)
-summary(mod1)
-
-plot(mod1, which = 1)
-plot(mod1, which = 2)
-plot(mod1, which = 3)
-
-ggplot(DF_SM_4, aes(x = D4, y = wiedza)) +
-  geom_boxplot() +
-  theme_bw()+
-  xlab("Miejsce zamieszaknia")+
-  ylab("Różnica wyników kwestionariuszy")
-
 
 #model 2 - jak oceniasz swoją wiedzę
 table(DF_SM_4$D9)
@@ -737,5 +732,37 @@ ggplot(DF_SM_4, aes(x = warunek, y = wiedza)) +
   theme_bw() +
   xlab("Warunek") +
   ylab("Wynik testu po prezentacji")
+
+```
+
+## ANOVA dla m. zamieszkania
+
+```{r}
+#anova  - miejsce zamieszaknia
+aov_D4 <- aov(wiedza ~ D4, data = DF_SM_4)
+summary(aov_D4) 
+
+plot(aov_D4)
+
+ggplot(DF_SM_4, aes(x = D4, y = wiedza)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Miejsce zamieszaknia")+
+  ylab("Wiedza")
+
+
+#anova 11
+aov_D4_A <- aov(SUM_A ~ D4, data = DF_SM_4)
+summary(aov_D4_A) 
+
+plot(aov_D4_A)
+
+
+ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Miejsce zamieszkania")+
+  ylab("Wiedza przed obejrzeniem filmu") 
+
 
 ```

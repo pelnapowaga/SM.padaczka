@@ -157,6 +157,13 @@ x - 75
 
 
 (305*100)/550
+
+# miejsce zamieszkania w podziale na warunek
+
+DF_PAD_3 %>% 
+  group_by(warunek,D4) %>% 
+  summarise(N = n())
+
 ```
 
 ## Wyniki dwóch części kwestionariusza
@@ -258,17 +265,40 @@ ggplot(ggplot_df, aes(x = wynik)) +
   geom_density(aes(color = test)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
-  ylab("gęstość") 
+  ylab("Gęstość") +
+  xlab("Wynik testu")
 
 
-# gęstość w podziale na płeć 
+# gęstość przed prezentacją w podziale na płeć 
 
-ggplot(ggplot_df, aes(x = wynik)) + 
-  geom_density(aes(color = test)) +
+k<-DF_PAD_3 %>% filter(plec == "Kobieta")
+m<-DF_PAD_3 %>% filter(plec == "Mężczyzna")
+
+ggplot(DF_PAD_3, aes(x = SUM_A)) + 
+  geom_density(aes(color = plec)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
-  ylab("gęstość") +
-  facet_wrap(vars(plec))
+  ylab("Gęstość") + 
+  xlab("Wynik testu przed prezentacją") + 
+  theme(legend.title = element_text("Płeć")) +
+  geom_vline(aes(xintercept = mean(k$SUM_A)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(m$SUM_A)), color = "#00CED1", linetype="dashed")
+
+# gęstość przed prezentacją w podziale na profil klasy
+
+ggplot(DF_PAD_3, aes(x = SUM_A)) + 
+  geom_density(aes(color = D5)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  ylab("Gęstość") + 
+  xlab("Wynik testu przed prezentacją") + 
+  theme(legend.title = element_text("Profil klasy")) +
+  geom_vline(aes(xintercept = mean(I$SUM_A)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(B$SUM_A)), color = "#00CED1", linetype="dashed") 
+
+B <- DF_PAD_3 %>% filter(D5 == "Z rozszerzoną biologią")
+I <- DF_PAD_3 %>% filter(D5 == "Inny")
+  
 
 # gęstość w podziale na miejsce zamieszkania
 
@@ -276,8 +306,37 @@ ggplot(ggplot_df, aes(x = wynik)) +
   geom_density(aes(color = test)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
-  ylab("gęstość") +
+  ylab("Gęstość") +
   facet_wrap(vars(D4))
+
+# gęstość w podziale na płeć dla wiedzy
+
+K<-DF_PAD_3 %>% filter(plec == "Kobieta") 
+M<-DF_PAD_3 %>% filter(plec == "Mężczyzna")
+
+ggplot(DF_PAD_3, aes(x = wiedza)) + 
+  geom_density(aes(color = plec)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  ylab("Gęstość") + 
+  xlab("Różnica wyników testów") + 
+  theme(legend.title = element_text("Płeć")) +
+  geom_vline(aes(xintercept = mean(K$wiedza)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(M$wiedza)), color = "#00CED1", linetype="dashed")
+
+# gęstość w podziale na profil klasy dla wiedzy
+
+ggplot(DF_PAD_3, aes(x = wiedza)) + 
+  geom_density(aes(color = D5)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  ylab("Gęstość") + 
+  xlab("Różnica wyników testów") + 
+  theme(legend.title = element_text("Profil klasy")) +
+  geom_vline(aes(xintercept = mean(I$wiedza)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(B$wiedza)), color = "#00CED1", linetype="dashed") 
+  
+
 
 ```
 
@@ -314,7 +373,8 @@ var.test(df_plec_m$SUM_A, df_plec_k$SUM_A)
 t.test(df_plec_m$SUM_A, df_plec_k$SUM_A,
        paired = FALSE,   
        var.equal = FALSE,
-       conf.level = 0.95)
+       conf.level = 0.95,
+       alternative = "less")
 
 #nie istotny
 
@@ -346,7 +406,8 @@ var.test(df_D5i$SUM_A, df_D5b$SUM_A)
 t.test(df_D5i$SUM_A, df_D5b$SUM_A,
        paired = FALSE,   
        var.equal = TRUE,
-       conf.level = 0.95)
+       conf.level = 0.95,
+       alternative = "less")
 
 #istotny i to bardzo
 
@@ -364,25 +425,20 @@ sd(df_D5b$SUM_A)
 
 #dla zmiennej test - t.test dla prób zależnych
 
-pivot_df_testA <- pivot_df_pad %>% 
-  filter(test == "A")
-
-pivot_df_testB <- pivot_df_pad %>% 
-  filter(test == "B")
-
 #sprawdzamy homogeniczność wariancji; 
 #H0: wariancje są homogeniczne - mamy podstawy do odrzucenia - wariancje są heterogeniczne
 
-var.test(pivot_df_testA$wynik, pivot_df_testB$wynik)
+var.test(DF_PAD_3$SUM_A, DF_PAD_3$SUM_B)
 
-t.test(pivot_df_testA$wynik, pivot_df_testB$wynik,
+t.test(DF_PAD_3$SUM_A, DF_PAD_3$SUM_B,
        paired = TRUE,   
        var.equal = FALSE,
-       conf.level = 0.95)
+       conf.level = 0.95,
+       alternative = "less")
 
 #istotny
 
-cohensD(pivot_df_testA$wynik, pivot_df_testB$wynik) 
+cohensD(DF_PAD_3$SUM_A, DF_PAD_3$SUM_B) 
 
 ```
 
@@ -405,7 +461,8 @@ var.test(DF_3_M$wiedza, DF_3_K$wiedza)
 t.test(DF_3_M$wiedza, DF_3_K$wiedza,
        paired = FALSE,   
        var.equal = TRUE,
-       conf.level = 0.95)
+       conf.level = 0.95,
+       alternative = "less")
 
 #istotny
 
@@ -432,7 +489,8 @@ var.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
 t.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza,
        paired = FALSE,   
        var.equal = FALSE,
-       conf.level = 0.95)
+       conf.level = 0.95,
+       alternative = "less")
 
 #istotny
 
