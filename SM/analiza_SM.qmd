@@ -414,12 +414,9 @@ ggplot(ggplot_df, aes(x = wynik)) +
   ylab("Wynik testu przed prezentacją")
 
 ```
- ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
-  geom_boxplot() +
-  theme_bw() +
-  xlab("Wielkość miejsca zamieszkania") + 
-  ylab("Wynik testu przed prezentacją")
-  
+
+ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) + geom_boxplot() + theme_bw() + xlab("Wielkość miejsca zamieszkania") + ylab("Wynik testu przed prezentacją")
+
 ## Przygotowanie danych do testów: test t i modele liniowe
 
 ```{r}
@@ -667,6 +664,46 @@ ggplot(DF_SM_4, aes(x = as.factor(wiek), y = wiedza)) +
 
 ggplot(DF_SM_4, aes(x = D4, y = wiedza)) + geom_boxplot() + theme_bw()+ xlab("Miejsce zamieszaknia")+ ylab("Różnica wyników kwestionariuszy")
 
+## ANOVA dla zmiennej wiek przed prezentacją
+
+```{r}
+
+aov_w_A<-aov(SUM_A ~ as.factor(wiek), data = DF_SM_4)
+summary(aov_w_A)
+
+plot(aov_w_A)
+hist(DF_SM_4$SUM_A)
+
+ggplot(DF_SM_4, aes(x = as.factor(wiek), y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw() + 
+  xlab("Wiek") + 
+  ylab("Wynik testu przed prezentacją")
+
+
+DF_SM_4 %>% 
+  group_by(wiek) %>% 
+  summarise(N = n())
+  
+```
+
+## ANOVA dla zmiennej wiek po prezentacji
+
+```{r}
+
+aov_w_B<-aov(SUM_B ~ as.factor(wiek), data = DF_SM_4)
+summary(aov_w_B)
+
+plot(aov_w_B)
+hist(DF_SM_4$SUM_B)
+
+ggplot(DF_SM_4, aes(x = as.factor(wiek), y = SUM_B)) +
+  geom_boxplot() +
+  theme_bw() + 
+  xlab("Wiek") + 
+  ylab("Wynik testu przed prezentacją")
+```
+
 ## ANOVA dla zmiennej D7 (PKT 1)
 
 ```{r}
@@ -763,6 +800,333 @@ ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
   theme_bw()+
   xlab("Miejsce zamieszkania")+
   ylab("Wiedza przed obejrzeniem filmu") 
+
+
+```
+
+## Dodatkowe analizy
+
+```{r}
+
+#średnia i dominanta dla SUM_A i SUM_B
+round(mean(DF_SM_4$SUM_A), 2) #5,41
+round(mean(DF_SM_4$SUM_B), 2) #11,82
+
+#tabela wieku
+
+DF_SM_4 %>% 
+  mutate(wiek_tab = as.character(wiek)) %>% 
+  group_by(wiek_tab) %>% 
+  summarise(N=n())
+
+#min i max przyrostu 
+
+min(DF_SM_4$SUM_B - DF_SM_4$SUM_A) #komuś o 6 spadła wiedza :)
+max(DF_SM_4$SUM_B - DF_SM_4$SUM_A) #14
+mean(DF_SM_4$SUM_B - DF_SM_4$SUM_A) 
+
+#średnia i dominanta przyrostu w zależności od płci 
+
+DF_SM_4 %>% 
+  group_by(plec) %>% 
+  summarise(M_przyrost = round(mean(wiedza),2))
+
+#min, max, M i dominanta SUM_A i SUM_B w zależności od wszystkich zmiennych 
+
+DF_SM_4 %>% 
+  group_by(plec) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+DF_SM_4 %>% 
+  mutate(wiek_tab = as.character(wiek)) %>% 
+  group_by(wiek_tab) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+DF_SM_4 %>% 
+  group_by(narodowosc) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+DF_SM_4 %>% 
+  group_by(D4) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+DF_SM_4 %>% 
+  group_by(D5) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+
+```
+
+## Dominanta 
+
+#czesc 1 - dla SUM A i SUM B
+
+```{r}
+
+#dla SUM A
+
+d_SUM_A <- density(DF_SM_4$SUM_A)
+round(d_SUM_A$x[which.max(d_SUM_A$y)], 2) #0,33
+
+ggplot(DF_SM_4, aes(x = SUM_A)) +
+  geom_density() +
+  theme_bw() +
+  xlab("Wynik testu przed prezentacją")+
+  ylab("Gęstość")
+
+
+#dla SUM B
+
+d_SUM_B <- density(DF_SM_4$SUM_B)
+round(d_SUM_B$x[which.max(d_SUM_B$y)], 2) #12.99
+
+ggplot(DF_SM_4, aes(x = SUM_B)) +
+  geom_density() +
+  theme_bw() +
+  xlab("Wynik testu po prezentacji")+
+  ylab("Gęstość")
+
+# w podziale na płeć
+
+d_kobiety_A <- density(df_plec_k$SUM_A) 
+round(d_kobiety_A$x[which.max(d_kobiety_A$y)], 2) #0,43
+
+d_mezczyzni_A <- density(df_plec_m$SUM_A)
+round(d_mezczyzni_A$x[which.max(d_mezczyzni_A$y)], 2) #0,42
+
+ggplot(DF_SM_4, aes(x = SUM_A)) +
+  geom_density() +
+  facet_wrap(vars(plec)) +
+  theme_bw() + 
+  xlab("Wynik testu przed prezentacją") +
+  ylab("Gęstość")
+
+d_kobiety_B <- density(df_plec_k$SUM_B) 
+round(d_kobiety_B$x[which.max(d_kobiety_B$y)], 2) #13,02
+
+d_mezczyzni_B <- density(df_plec_m$SUM_B)
+round(d_mezczyzni_B$x[which.max(d_mezczyzni_B$y)], 2) #13,02
+
+ggplot(DF_SM_4, aes(x = SUM_A)) +
+  geom_density() +
+  facet_wrap(vars(plec)) +
+  theme_bw() + 
+  xlab("Wynik testu przed prezentacją") +
+  ylab("Gęstość")
+
+# w podziale na wiek
+
+#14
+
+d_14<-DF_SM_4 %>% 
+  filter(wiek == 14)
+
+d_14A <- density(d_14$SUM_A) 
+round(d_14A$x[which.max(d_14$y)], 2) #0,61
+
+d_14B <- density(d_14$SUM_B) 
+round(d_14B$x[which.max(d_14B$y)], 2) #12,20
+
+#15
+d_15<-DF_SM_4 %>% 
+  filter(wiek == 15)
+
+d_15A <- density(d_15$SUM_A) 
+round(d_15A$x[which.max(d_15A$y)], 2) #0,41
+
+d_15B <- density(d_15$SUM_B) 
+round(d_15B$x[which.max(d_15B$y)], 2) #13,07
+
+#16
+
+d_16<-DF_SM_4 %>% 
+  filter(wiek == 16)
+
+d_16A <- density(d_16$SUM_A) 
+round(d_16A$x[which.max(d_16A$y)], 2) #0,71
+
+d_16B <- density(d_16$SUM_B) 
+round(d_15B$x[which.max(d_16B$y)], 2) #13,04
+
+
+#17
+d_17<-DF_SM_4 %>% 
+  filter(wiek == 17)
+
+d_17A <- density(d_17$SUM_A) 
+round(d_17A$x[which.max(d_17A$y)], 2) #9,39
+
+d_17B <- density(d_17$SUM_B) 
+round(d_17B$x[which.max(d_17B$y)], 2) #13
+
+#18
+
+d_18<-DF_SM_4 %>% 
+  filter(wiek == 18)
+
+d_18A <- density(d_18$SUM_A) 
+round(d_18A$x[which.max(d_18A$y)], 2) #8,83
+
+d_18B <- density(d_18$SUM_B) 
+round(d_18B$x[which.max(d_18B$y)], 2) #13,45
+
+# wykresy
+ggplot(DF_SM_4, aes(x=SUM_A)) +
+  geom_density() + 
+  facet_wrap(wiek) +
+  theme_bw() + 
+  xlab("Wynik testu przed prezentacją") + 
+  ylab("Gęstość")
+
+ggplot(DF_SM_4, aes(x=SUM_B)) +
+  geom_density() + 
+  facet_wrap(wiek) +
+  theme_bw() + 
+  xlab("Wynik testu po prezentacju") + 
+  ylab("Gęstość")
+```
+
+#czesc 2 - dla przyrostu
+
+```{r}
+
+#przyrost w podziale na płeć
+
+d_kobiety <- density(DF_3_K$wiedza) 
+round(d_kobiety$x[which.max(d_kobiety$y)], 2) #4.77
+
+d_mezczyzni <- density(DF_3_M$wiedza)
+round(d_mezczyzni$x[which.max(d_mezczyzni$y)], 2) #7
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(plec)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy") +
+  ylab("Gęstość")
+
+#przyrost w podziale na wszystkie zmienne
+
+#D4
+
+table(DF_SM_4$D4)
+
+dominanta_a<-DF_SM_4 %>% 
+  filter(D4 == "Miasto do 50 000 mieszkańców")
+
+d_D4a <- density(dominanta_a$wiedza) 
+round(d_D4a$x[which.max(d_D4a$y)], 2) #4,45
+#
+dominanta_b<-DF_SM_4 %>% 
+  filter(D4 == "Miasto od 100 000 do 500 000 mieszkańców")
+
+d_D4b <- density(dominanta_b$wiedza) 
+round(d_D4b$x[which.max(d_D4b$y)], 2) #4.72
+#
+dominanta_c<-DF_SM_4 %>% 
+  filter(D4 == "Miasto od 50 000 do 100 000 mieszkańców")
+
+d_D4c <- density(dominanta_c$wiedza) 
+round(d_D4c$x[which.max(d_D4c$y)], 2) #6.53
+#
+dominanta_d<-DF_SM_4 %>% 
+  filter(D4 == "Miasto powyżej 500 000 mieszkańców")
+
+d_D4d <- density(dominanta_d$wiedza) 
+round(d_D4d$x[which.max(d_D4d$y)], 2) #5,38
+#
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D4)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy") +
+  ylab("Gęstość")
+
+#D5 - profil klasy
+
+d_Biol <- density(DF_3_Biol$wiedza) 
+round(d_Biol$x[which.max(d_Biol$y)], 2)#5.07
+
+d_Inny <- density(DF_3_Inny$wiedza) 
+round(d_Inny$x[which.max(d_Inny$y)], 2) #11,66
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D5)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy")+
+  ylab("Gęstość")
+
+#D6 - czy słyszałeś kiedyś o SM
+
+D6_tak <- DF_SM_4 %>% 
+  filter(D6 == "Tak")
+
+d_D6_tak<- density(D6_tak$wiedza) 
+round(d_D6_tak$x[which.max(d_D6_tak$y)], 2) #4,64
+#
+D6_nie <-DF_SM_4 %>% 
+  filter(D6 == "Nie")
+
+d_D6_nie<- density(D6_nie$wiedza) 
+round(d_D6_nie$x[which.max(d_D6_nie$y)], 2) #11,82
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D6)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy")+
+  ylab("Gęstość")
+
+#D7 - źródło wiedzy
+
+d_inne_D7<- density(inne$wiedza) 
+round(d_inne_D7$x[which.max(d_inne_D7$y)], 2) #8,06
+
+d_internet <- density(internet$wiedza) 
+round(d_internet$x[which.max(d_internet$y)], 2) #4,45
+
+d_rodzina<- density(rodzina$wiedza) 
+round(d_rodzina$x[which.max(d_rodzina$y)], 2) #4,52
+
+d_szkola <- density(szkola$wiedza) 
+round(d_szkola$x[which.max(d_szkola$y)], 2) #4,95
+
+d_znajomi <- density(znajomi$wiedza) 
+round(d_znajomi$x[which.max(d_znajomi$y)], 2) #4,53
+
+ggplot(D7, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(zrodlo)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy")+
+  ylab("Gęstość")
+
+#D8 - czy znasz kogoś chorującego na SM
+
+D8_tak <- DF_SM_4 %>% 
+  filter(D8 == "Tak")
+
+d_D8_tak<- density(D8_tak$wiedza) 
+round(d_D8_tak$x[which.max(d_D8_tak$y)], 2) #4,33
+#
+D8_nie <-DF_SM_4 %>% 
+  filter(D8 == "Nie")
+
+d_D8_nie<- density(D8_nie$wiedza) 
+round(d_D8_nie$x[which.max(d_D8_nie$y)], 2) #5,18
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D8)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy")+
+  ylab("Gęstość")
 
 
 ```
