@@ -1,0 +1,1134 @@
+---
+title: "SManaliza"
+author: Agata Adamczyk
+format: docx
+editor: visual
+date-modified: 19.09
+---
+
+## Pakiety
+
+```{r}
+install.packages("lsr")
+
+library(tidyverse) 
+library(readr)
+library(psych)
+library(dplyr)
+library(lsr)
+
+```
+
+## Przygotowanie bazy danych
+
+```{r}
+
+KWESTIONARIUSZ_SM <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_SM.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+KWESTIONARIUSZ_PADACZKA_SM <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_PADACZKA- SM.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+KWESTIONARIUSZ_SM_PADACZKA <- read_delim("nowe_bazy_danych/KWESTIONARIUSZ_SM-PADACZKA.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+
+
+#wybranie zmiennych z baz danych 
+
+SM<-KWESTIONARIUSZ_SM %>% 
+  select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
+  mutate(warunek = "SM") 
+
+PA_SM<-KWESTIONARIUSZ_PADACZKA_SM %>% 
+  select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
+  mutate(warunek = "PA_SM") 
+
+SM_PA<-KWESTIONARIUSZ_SM_PADACZKA %>% 
+  select(wiek, plec, narodowosc,starts_with(c("D","Q"))) %>% 
+  mutate(warunek = "SM_PA") 
+
+#stwirzenie caej bazy danych dla SM; uzyskalismy baze danych z 37 zmiennymi dla 509 obserwacji
+DF_SM<-rbind(SM, PA_SM, SM_PA)
+
+#509 obserwacji 
+
+
+```
+
+## Porządki
+
+```{r}
+
+DF_SM <-DF_SM %>% 
+  filter(plec == "Kobieta" | plec == "Mężczyzna") %>% 
+  mutate(wiek = case_when(
+    wiek == "14-15 lat" ~ 14,
+    wiek == "15-16 lat" ~ 15,
+    wiek == "16-17 lat" ~ 16,
+    wiek == "17-18 lat" ~ 17,
+    wiek == "18-19 lat" ~ 18,
+    wiek == "Powyżej 20 lat" ~ 20)) %>% 
+  filter(wiek == 14| wiek == 15 | wiek == 16 | wiek == 17 | wiek == 18)
+
+#wywalamy powyżej 20 rż.; zostaje nam 491 obserwacji 
+    
+```
+
+## Czy ktoś nam strzelał w pytaniach
+
+```{r}
+
+DF_SM %>% 
+  mutate(nr = row_number()) %>% 
+  filter(D6 == "Nie") %>% 
+  filter(D8 == "Tak") 
+
+#wyrzucamy te 3 osoby 
+
+DF_SM <- DF_SM[-c(57,77,346),]
+#zostaje nam 488 obserwacji 
+
+```
+
+## Opis próby
+
+```{r}
+
+#w opisie próby powinniśmy: "tabelka ze średnimi i odchyleniami naszych pomiarów w podziale na test, w podziale na płeć i w podziale na test oraz płeć (nie zapomnieć o raportowaniu N)"
+
+DF_SM %>% 
+  group_by(warunek, plec) %>% 
+  summarise(N=n())
+
+table(DF_SM$plec)
+
+DF_SM %>% 
+  group_by( D4) %>% 
+  summarise(N=n())
+
+DF_SM %>% 
+  group_by(warunek) %>% 
+  summarise(M = round(mean(wiek),2), SD =  round(sd(wiek),2))
+
+DF_SM %>% 
+  summarise(M = round(mean(wiek),2), SD =  round(sd(wiek),2)) 
+
+# w sumie możemy już opisać próbę 
+
+```
+
+## Przekodowanie pytan
+
+```{r}
+
+DF_SM_2<-DF_SM %>% 
+  mutate(QA1 = ifelse (QA1 == 'Immunologicznego', 1, 0),
+         QA2 = ifelse (QA2 == 'Przyczyny stwardnienia rozsianego nie są do końca znane', 1, 0),
+         QA3 = ifelse (QA3 == 'Wszystkie powyższe odpowiedzi są poprawne', 1, 0),
+         QA4 = ifelse (QA4 == 'Wszystkie powyższe odpowiedzi są poprawne', 1, 0),
+         QA5 = ifelse (QA5 == 'PRAWDA', 1, 0),
+         QA6 = ifelse (QA6 == 'PRAWDA', 1, 0),
+         QA7 = ifelse (QA7 == 'PRAWDA', 1, 0), 
+         QA8 = ifelse (QA8 == 'PRAWDA', 1, 0), 
+         QA9 = ifelse (QA9 == 'PRAWDA', 1, 0), 
+         QA10 = ifelse (QA10 == 'PRAWDA', 1, 0), 
+         QA11 = ifelse (QA11 == 'PRAWDA', 1, 0), 
+         QA12 = ifelse (QA12 == 'FAŁSZ', 1, 0), 
+         QA13 = ifelse (QA13 == 'PRAWDA', 1, 0), 
+         QA14 = ifelse (QA14 == 'PRAWDA', 1, 0),
+         QB1 = ifelse (QB1 == 'Immunologicznego', 1, 0),
+         QB2 = ifelse (QB2 == 'Przyczyny stwardnienia rozsianego nie są do końca znane', 1, 0),
+         QB3 = ifelse (QB3 == 'Wszystkie powyższe odpowiedzi są poprawne', 1, 0),
+         QB4 = ifelse (QB4 == 'Wszystkie powyższe odpowiedzi są poprawne', 1, 0),
+         QB5 = ifelse (QB5 == 'PRAWDA', 1, 0),
+         QB6 = ifelse (QB6 == 'PRAWDA', 1, 0),
+         QB7 = ifelse (QB7 == 'PRAWDA', 1, 0), 
+         QB8 = ifelse (QB8 == 'PRAWDA', 1, 0), 
+         QB9 = ifelse (QB9 == 'PRAWDA', 1, 0), 
+         QB10 = ifelse (QB10 == 'PRAWDA', 1, 0), 
+         QB11 = ifelse (QB11 == 'PRAWDA', 1, 0), 
+         QB12 = ifelse (QB12 == 'FAŁSZ', 1, 0), 
+         QB13 = ifelse (QB13 == 'PRAWDA', 1, 0), 
+         QB14 = ifelse (QB14 == 'PRAWDA', 1, 0)) 
+
+
+```
+
+## Wyniki dwóch czesci kwestionariusza
+
+```{r}
+
+DF_SM_3 <- DF_SM_2 %>% 
+  mutate(SUM_A = 
+           DF_SM_2 %>% 
+           select(starts_with("QA")) %>% 
+           rowSums) %>% 
+   mutate(SUM_B = 
+           DF_SM_2 %>% 
+           select(starts_with("QB")) %>% 
+           rowSums) %>% 
+  select(-starts_with(c("QA", "QB")))
+
+```
+
+## DF_SM_4
+
+```{r}
+
+DF_SM_4 <- DF_SM_3 %>% 
+  mutate(wiedza = SUM_B - SUM_A)
+
+```
+
+## Zmienna D7
+
+```{r}
+
+install.packages("stringr")
+library(stringr)
+
+DF_SM_D7 <- DF_SM_4 %>%
+  filter(str_detect(D7, "Internet| Szkoła | Rodzina | Znajomi"))
+
+DF_SM_D7 <- DF_SM_4 %>% 
+  mutate(D7_internet = str_detect(D7,"Internet"), 
+         D7_szkola = str_detect(D7,"Szkoła"), 
+         D7_rodzina = str_detect(D7, "Rodzina"), 
+         D7_inne = str_detect(D7, "Inne"), 
+         D7_znajomi = str_detect(D7, "Znajomi"))
+
+
+# test t na wynikach osób true/false
+# conajmniej 30 osób
+
+internet <- DF_SM_D7 %>% 
+  filter(D7_internet) %>% 
+  select(wiedza) %>% 
+  mutate(zrodlo = "Internet")
+
+szkola <- DF_SM_D7 %>% 
+  filter(D7_szkola) %>% 
+  select(wiedza) %>% 
+  mutate(zrodlo = "Szkoła")
+
+rodzina <- DF_SM_D7 %>% 
+  filter(D7_rodzina) %>% 
+  select(wiedza) %>% 
+  mutate(zrodlo = "Rodzina")
+
+inne <- DF_SM_D7 %>% 
+  filter(D7_inne) %>% 
+  select(wiedza) %>% 
+  mutate(zrodlo = "Inne")
+
+znajomi <- DF_SM_D7 %>% 
+  filter(D7_znajomi) %>% 
+  select(wiedza) %>% 
+  mutate(zrodlo = "Znajomi")
+
+
+D7<- bind_rows(internet, szkola, rodzina, inne, znajomi)
+
+# i teraz ANOVA + post hoc
+
+```
+
+## Rzetelność kwestionariusza
+
+```{r}
+
+alpha(DF_SM_2 %>% 
+  select(starts_with("QA"))) 
+
+# raw_alpha = 0.8730171, dobra rzetelność
+
+alpha(DF_SM_2 %>% 
+  select(starts_with("QB")))
+
+# raw_alpha = 0.8271339, dobra rzetelność
+
+```
+
+## Rzetelność kwestionariusza - EFA
+
+```{r}
+
+library(nFactors)
+library(GPArotation)
+library(psych)
+
+```
+
+```{r}
+
+answers_A <- DF_SM_2 %>% 
+  select(starts_with("QA"))
+
+Korelacja <- cor(answers_A,
+                 method = "spearman",
+                 use = "pairwise.complete.obs")
+
+ev_Dane <- eigen(Korelacja) 
+ap_Dane <- parallel(subject=nrow(answers_A),
+                    var=ncol(answers_A),
+                    rep=701, cent=.05) #stałe (rep - liczba repetycji algorytmu)
+nS_Dane <- nScree(x = ev_Dane$values, #wartości własne macierzy korelacji 
+                  aparallel = ap_Dane$eigen$qevpea) 
+plotnScree(nS_Dane)
+
+#macież korelacji
+cor_answers_A<-cor(answers_A, method = "spearman")
+View(cor_answers_A) 
+
+sum(cor(cor_answers_A)<0.3)/length(cor_answers_A-14)*100 #77% korelacji jest poniżej 0.3
+(sum(cor(cor_answers_A)>0.9)-14)/length(cor_answers_A-14)*100 #nie ma żadnej korelacji powyżej 0.9
+
+#wyznacznik macierzy korelacji
+det(cor(answers_A)) #0.00897695
+
+#kryterium KMO
+KMO(cor(answers_A))
+
+#czy macierz jest macierzą identycznościową
+cortest.bartlett(cor(answers_A)) #H0: macierz korelacji jest identycznościowa - dane nie mają ze sobą nic wspólnego; mamy podstawy do orzucenia H0
+
+#właściwa EFA
+fit_1<-fa(r = answers_A, nfactors = 2, rotate = "varimax", cor = "tet")
+print(fit_1)
+
+# powinna byc dla danych tetrachorycznych, ale wtedy nie wychodzi; do przemyslenia 
+# jest sens badać jeden wynik 
+# ile wyszło czynników + dodajemy ładunki czynnikowe
+# model 1 czynnikowy jest gorzej doapsowany niż 2
+# w załączniku
+
+
+```
+
+## Wykres gęstości wyników: pre-test/re-test + płeć + demografia
+
+```{r}
+
+ggplot_df <- DF_SM_3 %>% 
+  select(plec, D4, SUM_A, SUM_B, warunek) %>%
+  mutate(A = SUM_A, B = SUM_B) %>% 
+  pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik")
+
+# gęstość w podziale na miejsce zamieszkania
+
+ggplot(ggplot_df, aes(x = wynik)) + 
+  geom_density(aes(color = test)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  ylab("Gęstość") +
+  xlab("Wynik testu") +
+  facet_wrap(vars(D4))
+
+
+```
+
+## Wykresy
+
+```{r}
+
+# wykres gęstości przed prezentacją dla płci
+
+ggplot(DF_SM_4, aes(x = SUM_A)) + 
+  geom_density(aes(color = plec)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  theme(legend.title = element_text("Płeć")) +
+  ylab("Gęstość") +
+  xlab("Wynik testu przed prezentacją") +
+  geom_vline(aes(xintercept = mean(k$SUM_A)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(m$SUM_A)), color = "#00CED1", linetype="dashed")
+
+k<-DF_SM_4 %>% filter(plec == "Kobieta")
+m<-DF_SM_4 %>% filter(plec == "Mężczyzna")
+
+
+
+# wykres gęstości po perezentacji dla płci
+
+ggplot(DF_SM_4, aes(x = wiedza)) + 
+  geom_density(aes(color = plec)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  theme(legend.title = element_text("Płeć")) +
+  ylab("Gęstość") +
+  xlab("Różnica wyników kwestionariuszy") +
+  geom_vline(aes(xintercept = mean(k$wiedza)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(m$wiedza)), color = "#00CED1", linetype="dashed")
+
+# wykres gęstości przed prezentacją dla profilu 
+
+ggplot(DF_SM_4, aes(x = SUM_A)) +
+  geom_density(aes(color = D5)) +
+  theme_bw() +
+  theme(legend.position="bottom") + 
+  theme(legend.title = element_text("Profil klasy")) +
+  ylab("Gęstość") +
+  xlab("Wynik testu przed prezentacją") +
+  geom_vline(aes(xintercept = mean(I$SUM_A)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(B$SUM_A)), color = "#00CED1", linetype="dashed") 
+
+B <- DF_SM_4 %>% filter(D5 == "Z rozszerzoną biologią")
+I <- DF_SM_4 %>% filter(D5 == "Inny")
+
+# wykres gęstości po prezentacji dla profilu
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density(aes(color = D5)) +
+  theme_bw() +
+  theme(legend.position="bottom") + 
+  theme(legend.title = element_text("Profil klasy")) +
+  ylab("Gęstość") +
+  xlab("Różnica wyników kwestionariuszy") +
+  geom_vline(aes(xintercept = mean(I$wiedza)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(B$wiedza)), color = "#00CED1", linetype="dashed") 
+
+# wykres gęstości przed prezentacją i po prezentacji 
+
+ggplot(ggplot_df, aes(x = wynik)) + 
+  geom_density(aes(color = test)) +
+  theme_bw() + 
+  theme(legend.position="bottom") + 
+  ylab("Gęstość") +
+  xlab("Wynik testu") +
+  geom_vline(aes(xintercept = mean(SUM_A)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(SUM_B)), color = "#00CED1", linetype="dashed") 
+
+# wykres pudełkowy  przed prezentacją a miejsce zamieszkania
+
+ ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw() +
+  xlab("Wielkość miejsca zamieszkania") + 
+  ylab("Wynik testu przed prezentacją")
+
+# wykres pudełkowy  przed prezentacją a wiek
+
+ ggplot(DF_SM_4, aes(x = as.factor(wiek), y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw() +
+  xlab("Wiek") + 
+  ylab("Wynik testu przed prezentacją")
+
+```
+
+ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) + geom_boxplot() + theme_bw() + xlab("Wielkość miejsca zamieszkania") + ylab("Wynik testu przed prezentacją")
+
+## Przygotowanie danych do testów: test t i modele liniowe
+
+```{r}
+#przygotowanie danych 
+pivot_df <- DF_SM_3 %>% 
+  select(plec, D4, SUM_A, SUM_B, warunek, D5, D9) %>%
+  mutate(A = SUM_A, B = SUM_B) %>% 
+  pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik") 
+
+```
+
+## Test t -
+
+tu mamy wzięte złe zmienne; powinnyśmy liczyć test t dla sum A i dla różnicy midzy sum A i sum B czyli dla efektu uczenia się; więc robienie tego na pivotowanej bazie nie ma większego sensu; ona była nam jedynie przydatna do ych wykresów gdzie chciałyśmy nanieść na sibeie wyniki dwóch części kwestionariusza
+
+# pkt 1 - zmienne a sum A
+
+```{r}
+
+#dla płci
+
+df_plec_m <- DF_SM_4 %>% 
+  filter(plec == "Mężczyzna")
+
+df_plec_k <- DF_SM_4 %>% 
+  filter(plec == "Kobieta")
+
+
+#H0: wariancje są homogeniczne - nie mamy podstaw do odrzucenia = wariancje są homogeniczne
+
+var.test(df_plec_m$SUM_A, df_plec_k$SUM_A)
+
+t.test(df_plec_m$SUM_A, df_plec_k$SUM_A,
+       paired = FALSE,   
+       var.equal = TRUE,
+       conf.level = 0.95,
+       alternative = "less")
+
+cohensD(df_plec_m$SUM_A, df_plec_k$SUM_A)
+
+# SD
+
+sd(df_plec_m$SUM_A)
+sd(df_plec_k$SUM_A)
+
+```
+
+```{r}
+
+# dla profilu klasy
+
+df_D5i <- DF_SM_4 %>% 
+  filter(D5 == "Inny")
+
+df_D5b <- DF_SM_4 %>% 
+  filter(D5 == "Z rozszerzoną biologią")
+
+
+var.test(df_D5i$SUM_A, df_D5b$SUM_A)
+#mamy podstawy do odrzucenia hipotezy zerowej == wariancje są heterogeniczne
+
+t.test(df_D5b$SUM_A, df_D5i$SUM_A,
+       paired = FALSE,   
+       var.equal = TRUE,
+       conf.level = 0.95,
+       alternative = "greater")
+
+cohensD(df_D5i$SUM_A, df_D5b$SUM_A)
+
+# SD
+
+sd(df_D5i$SUM_A)
+sd(df_D5b$SUM_A)
+
+```
+
+# pkt 2 testy a wynik (nauki)
+
+```{r}
+
+#dla zmiennej test - t.test dla prób zależnych
+
+pivot_df_testA <- pivot_df %>% 
+  filter(test == "A")
+
+pivot_df_testB <- pivot_df %>% 
+  filter(test == "B")
+
+#sprawdzamy homogeniczność wariancji; 
+#H0: wariancje są homogeniczne - mamy podstawy do odrzucenia - wariancje są heterogeniczne
+
+var.test(pivot_df_testA$wynik, pivot_df_testB$wynik)
+
+t.test( pivot_df_testB$wynik, pivot_df_testA$wynik,
+       paired = TRUE,   
+       var.equal = FALSE,
+       conf.level = 0.95,
+       alternative = "greater")
+
+cohensD(pivot_df_testA$wynik, pivot_df_testB$wynik) 
+```
+
+# pkt 3 - zmienne demograficzne a wynik (nauki)
+
+```{r}
+
+#płeć
+
+DF_3_M<- DF_SM_4 %>% 
+  filter(plec == "Mężczyzna")%>% 
+  select(wiedza)
+
+DF_3_K<- DF_SM_4 %>% 
+  filter(plec == "Kobieta") %>% 
+  select(wiedza)
+
+
+var.test(DF_3_M$wiedza, DF_3_K$wiedza)
+#wariancje są homogeniczne
+
+t.test(DF_3_M$wiedza, DF_3_K$wiedza,
+       paired = FALSE,   
+       var.equal = TRUE,
+       conf.level = 0.95,
+       alternative = "less")
+
+cohensD(DF_3_M$wiedza, DF_3_K$wiedza)
+
+# SD
+
+sd(DF_3_M$wiedza)
+sd(DF_3_K$wiedza)
+
+
+#profil klasy
+
+DF_3_Inny<- DF_SM_4 %>% 
+  filter(D5 == "Inny") 
+
+DF_3_Biol<- DF_SM_4  %>% 
+  filter(D5 == "Z rozszerzoną biologią")
+
+var.test( DF_3_Biol$wiedza, DF_3_Inny$wiedza)
+#wariancje są heterogeniczne
+
+t.test( DF_3_Biol$wiedza, DF_3_Inny$wiedza,
+       paired = FALSE,   
+       var.equal = FALSE,
+       conf.level = 0.95,
+       alternative = "greater")
+
+cohensD(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
+
+# jest istotna różnica w tych grupach!
+
+# SD
+
+sd(DF_3_Inny$wiedza)
+sd(DF_3_Biol$wiedza)
+```
+
+## Modele liniowe
+
+# dla SUM_A - PKT 1
+
+```{r}
+
+#model 22
+table(DF_SM_4$D9)
+
+mod22 <- lm(SUM_A ~ D9, data = DF_SM_4)
+summary(mod22)
+
+plot(mod22, which = 1)
+plot(mod22, which = 2)
+plot(mod22, which = 3)
+
+ggplot(DF_SM_4, aes(x = D9, y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Deklarowana wiedza o SM")+
+  ylab("Wiedza przed obejrzeniem filmu")
+
+
+#model 33
+mod33 <- lm(SUM_A ~ as.factor(wiek), data = DF_SM_4)
+summary(mod33)
+
+plot(mod33, which = 1)
+plot(mod33, which = 2)
+plot(mod33, which = 3)
+
+ggplot(DF_SM_4, aes(x = as.factor(wiek), y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Wiek")+
+  ylab("Wiedza przed obejrzeniem filmu")
+
+```
+
+# dla wiedzy - efekt prezentacji - PKT 3
+
+```{r}
+
+#model 2 - jak oceniasz swoją wiedzę
+table(DF_SM_4$D9)
+
+mod2 <- lm(wiedza ~ D9, data = DF_SM_4)
+summary(mod2)
+
+plot(mod2, which = 1)
+plot(mod2, which = 2)
+plot(mod2, which = 3)
+
+ggplot(DF_SM_4, aes(x = D9, y = wiedza)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Deklarowana wiedza o SM")+
+  ylab("Wiedza")
+
+#ostatecznie wychodzi nam, że miejcsce zamieszkania nie ma znaczenia; jest różnica w zależności od poziomu wiedzy przed lekcją - i założenia do tego modelu są spełnjione; wszystko śmiga
+
+#kat "dobra" nie istotnie różni się od kat "bardzo dobra"
+
+# estimate, std error, intercepr = wyraz wolny; statystyka f i jej p-value; r2
+
+#model 3 - wiek 
+
+table(DF_SM_4$wiek)
+
+
+mod3 <- lm(wiedza ~ as.factor(wiek), data = DF_SM_4)
+summary(mod3)
+
+plot(mod3, which = 1)
+plot(mod3, which = 2)
+plot(mod3, which = 3)
+
+ggplot(DF_SM_4, aes(x = as.factor(wiek), y = wiedza)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Wiek")+
+  ylab("Różnica wyników kwestionariuszy")
+```
+
+ggplot(DF_SM_4, aes(x = D4, y = wiedza)) + geom_boxplot() + theme_bw()+ xlab("Miejsce zamieszaknia")+ ylab("Różnica wyników kwestionariuszy")
+
+## ANOVA dla zmiennej wiek przed prezentacją
+
+```{r}
+
+aov_w_A<-aov(SUM_A ~ as.factor(wiek), data = DF_SM_4)
+summary(aov_w_A)
+
+plot(aov_w_A)
+hist(DF_SM_4$SUM_A)
+
+ggplot(DF_SM_4, aes(x = as.factor(wiek), y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw() + 
+  xlab("Wiek") + 
+  ylab("Wynik testu przed prezentacją")
+
+
+DF_SM_4 %>% 
+  group_by(wiek) %>% 
+  summarise(N = n())
+  
+```
+
+## ANOVA dla zmiennej wiek po prezentacji
+
+```{r}
+
+aov_w_B<-aov(SUM_B ~ as.factor(wiek), data = DF_SM_4)
+summary(aov_w_B)
+
+plot(aov_w_B)
+hist(DF_SM_4$SUM_B)
+
+ggplot(DF_SM_4, aes(x = as.factor(wiek), y = SUM_B)) +
+  geom_boxplot() +
+  theme_bw() + 
+  xlab("Wiek") + 
+  ylab("Wynik testu przed prezentacją")
+```
+
+## ANOVA dla zmiennej D7 (PKT 1)
+
+```{r}
+
+aov_1 <- aov(SUM_A~ zrodlo, data = D7)
+summary(aov_1)
+
+#ANOVA jest nieistotna statystycznie
+
+plot(aov_1)
+
+# wykresy są w porządku; mamy zachowane założenie o liniowosci oraz normalności; wariancje błędów też są w porządku
+# ale sam model jest nieistotny statystycznie
+
+
+# box plot
+
+ggplot(D7, aes(x = zrodlo, y = SUM_A)) +
+  geom_boxplot() + 
+  theme_bw() +
+  xlab("Deklarowane źródło wiedzy") +
+  ylab("Wynik testu przed prezentacją")
+
+```
+
+## ANOVA dla zmiennej D7 (PKT 3) - to imo też nie ma sensu
+
+```{r}
+
+aov_11 <- aov(wiedza~ zrodlo, data = D7)
+summary(aov_11)
+
+#ANOVA jest nieistotna statystycznie
+
+plot(aov_11)
+
+# box plot
+
+ggplot(D7, aes(x = zrodlo, y = wiedza)) +
+  geom_boxplot() + 
+  theme_bw() +
+  xlab("Deklarowane źródło wiedzy") +
+  ylab("Wiedza")
+
+```
+
+## ANOVA dla warunków
+
+# czy w którymś z warunków lepiej się uczyli
+
+```{r}
+aov_2<-aov(wiedza ~ warunek, data = DF_SM_4)
+summary(aov_2)
+
+#równiż nie istotna statystycznue
+
+plot(aov_2)
+
+#mamy zaburzoną normalność 
+
+ggplot(DF_SM_4, aes(x = warunek, y = wiedza)) +
+  geom_boxplot() + 
+  theme_bw() +
+  xlab("Warunek") +
+  ylab("Wynik testu po prezentacji")
+
+```
+
+## ANOVA dla m. zamieszkania
+
+```{r}
+#anova  - miejsce zamieszaknia
+aov_D4 <- aov(wiedza ~ D4, data = DF_SM_4)
+summary(aov_D4) 
+
+plot(aov_D4)
+
+ggplot(DF_SM_4, aes(x = D4, y = wiedza)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Miejsce zamieszaknia")+
+  ylab("Wiedza")
+
+
+#anova 11
+aov_D4_A <- aov(SUM_A ~ D4, data = DF_SM_4)
+summary(aov_D4_A) 
+
+plot(aov_D4_A)
+
+
+ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
+  geom_boxplot() +
+  theme_bw()+
+  xlab("Miejsce zamieszkania")+
+  ylab("Wiedza przed obejrzeniem filmu") 
+
+
+```
+
+## Dodatkowe analizy
+
+```{r}
+
+#średnia i dominanta dla SUM_A i SUM_B
+round(mean(DF_SM_4$SUM_A), 2) #5,41
+round(mean(DF_SM_4$SUM_B), 2) #11,82
+
+#tabela wieku
+
+DF_SM_4 %>% 
+  mutate(wiek_tab = as.character(wiek)) %>% 
+  group_by(wiek_tab) %>% 
+  summarise(N=n())
+
+#min i max przyrostu 
+
+min(DF_SM_4$SUM_B - DF_SM_4$SUM_A) #komuś o 6 spadła wiedza :)
+max(DF_SM_4$SUM_B - DF_SM_4$SUM_A) #14
+mean(DF_SM_4$SUM_B - DF_SM_4$SUM_A) 
+
+#średnia i dominanta przyrostu w zależności od płci 
+
+DF_SM_4 %>% 
+  group_by(plec) %>% 
+  summarise(M_przyrost = round(mean(wiedza),2))
+
+#min, max, M i dominanta SUM_A i SUM_B w zależności od wszystkich zmiennych 
+
+DF_SM_4 %>% 
+  group_by(plec) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+DF_SM_4 %>% 
+  mutate(wiek_tab = as.character(wiek)) %>% 
+  group_by(wiek_tab) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+DF_SM_4 %>% 
+  group_by(narodowosc) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+DF_SM_4 %>% 
+  group_by(D4) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+DF_SM_4 %>% 
+  group_by(D5) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
+
+
+```
+
+## Dominanta 
+
+#czesc 1 - dla SUM A i SUM B
+
+```{r}
+
+#dla SUM A
+
+d_SUM_A <- density(DF_SM_4$SUM_A)
+round(d_SUM_A$x[which.max(d_SUM_A$y)], 2) #0,33
+
+ggplot(DF_SM_4, aes(x = SUM_A)) +
+  geom_density() +
+  theme_bw() +
+  xlab("Wynik testu przed prezentacją")+
+  ylab("Gęstość")
+
+
+#dla SUM B
+
+d_SUM_B <- density(DF_SM_4$SUM_B)
+round(d_SUM_B$x[which.max(d_SUM_B$y)], 2) #12.99
+
+ggplot(DF_SM_4, aes(x = SUM_B)) +
+  geom_density() +
+  theme_bw() +
+  xlab("Wynik testu po prezentacji")+
+  ylab("Gęstość")
+
+# w podziale na płeć
+
+d_kobiety_A <- density(df_plec_k$SUM_A) 
+round(d_kobiety_A$x[which.max(d_kobiety_A$y)], 2) #0,43
+
+d_mezczyzni_A <- density(df_plec_m$SUM_A)
+round(d_mezczyzni_A$x[which.max(d_mezczyzni_A$y)], 2) #0,42
+
+ggplot(DF_SM_4, aes(x = SUM_A)) +
+  geom_density() +
+  facet_wrap(vars(plec)) +
+  theme_bw() + 
+  xlab("Wynik testu przed prezentacją") +
+  ylab("Gęstość")
+
+d_kobiety_B <- density(df_plec_k$SUM_B) 
+round(d_kobiety_B$x[which.max(d_kobiety_B$y)], 2) #13,02
+
+d_mezczyzni_B <- density(df_plec_m$SUM_B)
+round(d_mezczyzni_B$x[which.max(d_mezczyzni_B$y)], 2) #13,02
+
+ggplot(DF_SM_4, aes(x = SUM_A)) +
+  geom_density() +
+  facet_wrap(vars(plec)) +
+  theme_bw() + 
+  xlab("Wynik testu przed prezentacją") +
+  ylab("Gęstość")
+
+# w podziale na wiek
+
+#14
+
+d_14<-DF_SM_4 %>% 
+  filter(wiek == 14)
+
+d_14A <- density(d_14$SUM_A) 
+round(d_14A$x[which.max(d_14$y)], 2) #0,61
+
+d_14B <- density(d_14$SUM_B) 
+round(d_14B$x[which.max(d_14B$y)], 2) #12,20
+
+#15
+d_15<-DF_SM_4 %>% 
+  filter(wiek == 15)
+
+d_15A <- density(d_15$SUM_A) 
+round(d_15A$x[which.max(d_15A$y)], 2) #0,41
+
+d_15B <- density(d_15$SUM_B) 
+round(d_15B$x[which.max(d_15B$y)], 2) #13,07
+
+#16
+
+d_16<-DF_SM_4 %>% 
+  filter(wiek == 16)
+
+d_16A <- density(d_16$SUM_A) 
+round(d_16A$x[which.max(d_16A$y)], 2) #0,71
+
+d_16B <- density(d_16$SUM_B) 
+round(d_15B$x[which.max(d_16B$y)], 2) #13,04
+
+
+#17
+d_17<-DF_SM_4 %>% 
+  filter(wiek == 17)
+
+d_17A <- density(d_17$SUM_A) 
+round(d_17A$x[which.max(d_17A$y)], 2) #9,39
+
+d_17B <- density(d_17$SUM_B) 
+round(d_17B$x[which.max(d_17B$y)], 2) #13
+
+#18
+
+d_18<-DF_SM_4 %>% 
+  filter(wiek == 18)
+
+d_18A <- density(d_18$SUM_A) 
+round(d_18A$x[which.max(d_18A$y)], 2) #8,83
+
+d_18B <- density(d_18$SUM_B) 
+round(d_18B$x[which.max(d_18B$y)], 2) #13,45
+
+# wykresy
+ggplot(DF_SM_4, aes(x=SUM_A)) +
+  geom_density() + 
+  facet_wrap(wiek) +
+  theme_bw() + 
+  xlab("Wynik testu przed prezentacją") + 
+  ylab("Gęstość")
+
+ggplot(DF_SM_4, aes(x=SUM_B)) +
+  geom_density() + 
+  facet_wrap(wiek) +
+  theme_bw() + 
+  xlab("Wynik testu po prezentacju") + 
+  ylab("Gęstość")
+```
+
+#czesc 2 - dla przyrostu
+
+```{r}
+
+#przyrost w podziale na płeć
+
+d_kobiety <- density(DF_3_K$wiedza) 
+round(d_kobiety$x[which.max(d_kobiety$y)], 2) #4.77
+
+d_mezczyzni <- density(DF_3_M$wiedza)
+round(d_mezczyzni$x[which.max(d_mezczyzni$y)], 2) #7
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(plec)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy") +
+  ylab("Gęstość")
+
+#przyrost w podziale na wszystkie zmienne
+
+#D4
+
+table(DF_SM_4$D4)
+
+dominanta_a<-DF_SM_4 %>% 
+  filter(D4 == "Miasto do 50 000 mieszkańców")
+
+d_D4a <- density(dominanta_a$wiedza) 
+round(d_D4a$x[which.max(d_D4a$y)], 2) #4,45
+#
+dominanta_b<-DF_SM_4 %>% 
+  filter(D4 == "Miasto od 100 000 do 500 000 mieszkańców")
+
+d_D4b <- density(dominanta_b$wiedza) 
+round(d_D4b$x[which.max(d_D4b$y)], 2) #4.72
+#
+dominanta_c<-DF_SM_4 %>% 
+  filter(D4 == "Miasto od 50 000 do 100 000 mieszkańców")
+
+d_D4c <- density(dominanta_c$wiedza) 
+round(d_D4c$x[which.max(d_D4c$y)], 2) #6.53
+#
+dominanta_d<-DF_SM_4 %>% 
+  filter(D4 == "Miasto powyżej 500 000 mieszkańców")
+
+d_D4d <- density(dominanta_d$wiedza) 
+round(d_D4d$x[which.max(d_D4d$y)], 2) #5,38
+#
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D4)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy") +
+  ylab("Gęstość")
+
+#D5 - profil klasy
+
+d_Biol <- density(DF_3_Biol$wiedza) 
+round(d_Biol$x[which.max(d_Biol$y)], 2)#5.07
+
+d_Inny <- density(DF_3_Inny$wiedza) 
+round(d_Inny$x[which.max(d_Inny$y)], 2) #11,66
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D5)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy")+
+  ylab("Gęstość")
+
+#D6 - czy słyszałeś kiedyś o SM
+
+D6_tak <- DF_SM_4 %>% 
+  filter(D6 == "Tak")
+
+d_D6_tak<- density(D6_tak$wiedza) 
+round(d_D6_tak$x[which.max(d_D6_tak$y)], 2) #4,64
+#
+D6_nie <-DF_SM_4 %>% 
+  filter(D6 == "Nie")
+
+d_D6_nie<- density(D6_nie$wiedza) 
+round(d_D6_nie$x[which.max(d_D6_nie$y)], 2) #11,82
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D6)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy")+
+  ylab("Gęstość")
+
+#D7 - źródło wiedzy
+
+d_inne_D7<- density(inne$wiedza) 
+round(d_inne_D7$x[which.max(d_inne_D7$y)], 2) #8,06
+
+d_internet <- density(internet$wiedza) 
+round(d_internet$x[which.max(d_internet$y)], 2) #4,45
+
+d_rodzina<- density(rodzina$wiedza) 
+round(d_rodzina$x[which.max(d_rodzina$y)], 2) #4,52
+
+d_szkola <- density(szkola$wiedza) 
+round(d_szkola$x[which.max(d_szkola$y)], 2) #4,95
+
+d_znajomi <- density(znajomi$wiedza) 
+round(d_znajomi$x[which.max(d_znajomi$y)], 2) #4,53
+
+ggplot(D7, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(zrodlo)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy")+
+  ylab("Gęstość")
+
+#D8 - czy znasz kogoś chorującego na SM
+
+D8_tak <- DF_SM_4 %>% 
+  filter(D8 == "Tak")
+
+d_D8_tak<- density(D8_tak$wiedza) 
+round(d_D8_tak$x[which.max(d_D8_tak$y)], 2) #4,33
+#
+D8_nie <-DF_SM_4 %>% 
+  filter(D8 == "Nie")
+
+d_D8_nie<- density(D8_nie$wiedza) 
+round(d_D8_nie$x[which.max(d_D8_nie$y)], 2) #5,18
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D8)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy")+
+  ylab("Gęstość")
+
+
+```
