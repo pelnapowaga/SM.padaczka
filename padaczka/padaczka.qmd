@@ -10,20 +10,19 @@ date-modified: 25.08
 library(readxl)
 library(tidyverse)
 library(psych)
-library(lsr)
 
 ```
 
 ## Przygotowanie bazy
 
 ```{r}
-padaczka <- read_excel("bazy_danych/padaczka.xlsx")  %>% 
+padaczka <- read_excel("padaczka.xlsx")  %>% 
   mutate(warunek = "PA") 
 
-padaczka_sm <- read_excel("bazy_danych/padaczka_sm.xlsx") %>% 
+padaczka_sm <- read_excel("padaczka_sm.xlsx") %>% 
   mutate(warunek = "PA_SM") 
 
-sm_padaczka <- read_excel("bazy_danych/sm_padaczka.xlsx") %>% 
+sm_padaczka <- read_excel("sm_padaczka.xlsx") %>% 
   mutate(warunek = "SM_PA") 
 
 ```
@@ -40,6 +39,9 @@ DF_PAD <- rbind(padaczka, sm_padaczka, padaczka_sm) %>%
 ## Przekodowanie zmiennych
 
 ```{r}
+table(DF_PAD$qa14)
+table(DF_PAD_2$qa14)
+
 DF_PAD_2 <- DF_PAD %>% 
   mutate(qa1 = ifelse(qa1 == "FALSE", 1, 0),
          qa2 = ifelse(qa2 == "FALSE", 1, 0),
@@ -72,9 +74,15 @@ DF_PAD_2 <- DF_PAD %>%
          qb14 = ifelse(qb14 == "Przewlekła choroba neurologiczna", 1, 0),
          qb15 = ifelse(qb15 == "Osoby chorujące na padaczkę muszą przyjmować leki do końca swojego życia", 1, 0)) 
 
+str(DF_PAD_2)
+table(DF_PAD$narodowosc)
 ```
 
 ```{r}
+table(DF_PAD$wiek)
+table(DF_PAD_2$wiek)
+table(DF_PAD$plec) 
+table(DF_PAD$plec, DF_PAD$wiek)
 
 DF_PAD_2 <- DF_PAD_2 %>% 
   filter(plec == "Kobieta" | plec == "Mężczyzna") %>% 
@@ -88,9 +96,7 @@ DF_PAD_2 <- DF_PAD_2 %>%
   filter(wiek == 14| wiek == 15 | wiek == 16 | wiek == 17 | wiek == 18)
 
 #wyrzucamy 3 osoby w wieku 20 lat (w tym jedna osoba z płcią inną)
-#wyrzucamy 18 osób z płcią inna - 1 = 17
-
-#na tym etapie z bazy danych usuwamy 20 osób
+#wyrzucamy 18 osób z płcią inna
 
 ```
 
@@ -148,13 +154,6 @@ x - 75
 
 
 (305*100)/550
-
-# miejsce zamieszkania w podziale na warunek
-
-DF_PAD_3 %>% 
-  group_by(warunek,D4) %>% 
-  summarise(N = n())
-
 ```
 
 ## Wyniki dwóch części kwestionariusza
@@ -169,8 +168,7 @@ DF_PAD_3 <- DF_PAD_2 %>%
            DF_PAD_2 %>% 
            select(starts_with("qb")) %>% 
            rowSums) %>% 
-  select(-starts_with(c("qa", "qb"))) %>% 
-  mutate(wiedza = SUM_B - SUM_A)
+  select(-starts_with(c("qa", "qb")))
 
 ```
 
@@ -197,6 +195,8 @@ alpha(DF_PAD_2 %>%
 library(nFactors)
 library(GPArotation)
 library(psych)
+
+
 
 answers_A <- DF_PAD_2 %>% 
   select(starts_with("QA"))
@@ -230,7 +230,7 @@ KMO(cor(answers_A))
 cortest.bartlett(cor(answers_A)) #H0: macierz korelacji jest identycznościowa - dane nie mają ze sobą nic wspólnego; mamy podstawy do orzucenia H0
 
 #właściwa EFA
-fit_1<-fa(r = answers_A, nfactors = 2, rotate = "varimax", cor = "tet")
+fit_1<-fa(r = answers_A, nfactors = 4, rotate = "varimax", cor = "tet")
 print(fit_1)
 
 # powinna byc dla danych tetrachorycznych, ale wtedy nie wychodzi; do przemyslenia 
@@ -256,70 +256,26 @@ ggplot(ggplot_df, aes(x = wynik)) +
   geom_density(aes(color = test)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
-  ylab("Gęstość") +
-  xlab("Wynik testu") +
-  geom_vline(aes(xintercept = mean(ggplot_df$SUM_A)), color = "red", linetype="dashed") + 
-  geom_vline(aes(xintercept = mean(ggplot_df$SUM_B)), color = "#00CED1", linetype="dashed")
+  ylab("gęstość") 
 
 
-# gęstość przed prezentacją w podziale na płeć 
+# gęstość w podziale na płeć 
 
-k<-DF_PAD_3 %>% filter(plec == "Kobieta")
-m<-DF_PAD_3 %>% filter(plec == "Mężczyzna")
-
-ggplot(DF_PAD_3, aes(x = SUM_A)) + 
-  geom_density(aes(color = plec)) +
+ggplot(ggplot_df, aes(x = wynik)) + 
+  geom_density(aes(color = test)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
-  ylab("Gęstość") + 
-  xlab("Wynik testu przed prezentacją") + 
-  theme(legend.title = element_text("Płeć")) +
-  geom_vline(aes(xintercept = mean(k$SUM_A)), color = "red", linetype="dashed") + 
-  geom_vline(aes(xintercept = mean(m$SUM_A)), color = "#00CED1", linetype="dashed")
+  ylab("gęstość") +
+  facet_wrap(vars(plec))
 
-# gęstość przed prezentacją w podziale na profil klasy
+# gęstość w podziale na miejsce zamieszkania
 
-ggplot(DF_PAD_3, aes(x = SUM_A)) + 
-  geom_density(aes(color = D5)) +
+ggplot(ggplot_df, aes(x = wynik)) + 
+  geom_density(aes(color = test)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
-  ylab("Gęstość") + 
-  xlab("Wynik testu przed prezentacją") + 
-  theme(legend.title = element_text("Profil klasy")) +
-  geom_vline(aes(xintercept = mean(I$SUM_A)), color = "red", linetype="dashed") + 
-  geom_vline(aes(xintercept = mean(B$SUM_A)), color = "#00CED1", linetype="dashed") 
-
-B <- DF_PAD_3 %>% filter(D5 == "Z rozszerzoną biologią")
-I <- DF_PAD_3 %>% filter(D5 == "Inny")
-
-# gęstość w podziale na płeć dla wiedzy
-
-K<-DF_PAD_3 %>% filter(plec == "Kobieta") 
-M<-DF_PAD_3 %>% filter(plec == "Mężczyzna")
-
-ggplot(DF_PAD_3, aes(x = wiedza)) + 
-  geom_density(aes(color = plec)) +
-  theme_bw() + 
-  theme(legend.position="bottom") + 
-  ylab("Gęstość") + 
-  xlab("Różnica wyników testów") + 
-  theme(legend.title = element_text("Płeć")) +
-  geom_vline(aes(xintercept = mean(K$wiedza)), color = "red", linetype="dashed") + 
-  geom_vline(aes(xintercept = mean(M$wiedza)), color = "#00CED1", linetype="dashed")
-
-# gęstość w podziale na profil klasy dla wiedzy
-
-ggplot(DF_PAD_3, aes(x = wiedza)) + 
-  geom_density(aes(color = D5)) +
-  theme_bw() + 
-  theme(legend.position="bottom") + 
-  ylab("Gęstość") + 
-  xlab("Różnica wyników testów") + 
-  theme(legend.title = element_text("Profil klasy")) +
-  geom_vline(aes(xintercept = mean(I$wiedza)), color = "red", linetype="dashed") + 
-  geom_vline(aes(xintercept = mean(B$wiedza)), color = "#00CED1", linetype="dashed") 
-  
-
+  ylab("gęstość") +
+  facet_wrap(vars(D4))
 
 ```
 
@@ -337,157 +293,8 @@ str(pivot_df_pad)
 
 ## Testy t
 
-#pkt 1 - testy t dla plec i profil klasy przed prezentacją
-
 ```{r}
 
-#dla PŁCI
-
-df_plec_m <- DF_PAD_3 %>% 
-  filter(plec == "Mężczyzna")
-
-df_plec_k <- DF_PAD_3 %>% 
-  filter(plec == "Kobieta")
-
-
-#H0: wariancje są homogeniczne -  mamy podstawy do odrzucenia = wariancje są homogeniczne
-
-var.test(df_plec_m$SUM_A, df_plec_k$SUM_A)
-
-t.test(df_plec_m$SUM_A, df_plec_k$SUM_A,
-       paired = FALSE,   
-       var.equal = FALSE,
-       conf.level = 0.95,
-       alternative = "less")
-
-#nie istotny
-
-cohensD(df_plec_m$SUM_A, df_plec_k$SUM_A)
-
-# SD
-
-sd(df_plec_m$SUM_A)
-sd(df_plec_k$SUM_A)
-
-
-
-```
-
-```{r}
-
-# dla profilu klasy
-
-df_D5i <- DF_PAD_3 %>% 
-  filter(D5 == "Inny")
-
-df_D5b <- DF_PAD_3 %>% 
-  filter(D5 == "Z rozszerzoną biologią")
-
-
-var.test(df_D5i$SUM_A, df_D5b$SUM_A)
-#nie mamy podstaw do odrzucenia hipotezy zerowej == wariancje są heterogeniczne
-
-t.test(df_D5i$SUM_A, df_D5b$SUM_A,
-       paired = FALSE,   
-       var.equal = TRUE,
-       conf.level = 0.95,
-       alternative = "less")
-
-#istotny i to bardzo
-
-cohensD(df_D5i$SUM_A, df_D5b$SUM_A)
-
-# SD
-
-sd(df_D5i$SUM_A)
-sd(df_D5b$SUM_A)
-
-```
-
-#pkt 2 - testy t dla przed i po prezentacji
-
-```{r}
-
-#dla zmiennej test - t.test dla prób zależnych
-
-#sprawdzamy homogeniczność wariancji; 
-#H0: wariancje są homogeniczne - mamy podstawy do odrzucenia - wariancje są heterogeniczne
-
-var.test(DF_PAD_3$SUM_A, DF_PAD_3$SUM_B)
-
-t.test(DF_PAD_3$SUM_A, DF_PAD_3$SUM_B,
-       paired = TRUE,   
-       var.equal = FALSE,
-       conf.level = 0.95,
-       alternative = "less")
-
-#istotny
-
-cohensD(DF_PAD_3$SUM_A, DF_PAD_3$SUM_B) 
-
-```
-
-#pkt 3 - testy t dla plec i profil klasy po prezentacji
-
-```{r}
-#płeć
-
-DF_3_M<- DF_PAD_3 %>% 
-  filter(plec == "Mężczyzna") %>% 
-  select(wiedza)
-
-DF_3_K<- DF_PAD_3 %>% 
-  filter(plec == "Kobieta") %>% 
-  select(wiedza)
-
-
-var.test(DF_3_M$wiedza, DF_3_K$wiedza)
-#wariancje są homogeniczne - nieistotny
-
-t.test(DF_3_M$wiedza, DF_3_K$wiedza,
-       paired = FALSE,   
-       var.equal = TRUE,
-       conf.level = 0.95,
-       alternative = "less")
-
-#istotny
-
-cohensD(DF_3_M$wiedza, DF_3_K$wiedza)
-
-# SD
-
-sd(DF_3_M$wiedza)
-sd(DF_3_K$wiedza)
-```
-
-```{r}
-#profil klasy
-
-DF_3_Inny<- DF_PAD_3 %>% 
-  filter(D5 == "Inny") 
-
-DF_3_Biol<- DF_PAD_3  %>% 
-  filter(D5 == "Z rozszerzoną biologią")
-
-var.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
-#wariancje są heterogeniczne - istotny
-
-t.test(DF_3_Inny$wiedza, DF_3_Biol$wiedza,
-       paired = FALSE,   
-       var.equal = FALSE,
-       conf.level = 0.95,
-       alternative = "less")
-
-#istotny
-
-cohensD(DF_3_Inny$wiedza, DF_3_Biol$wiedza)
-
-# jest istotna różnica w tych grupach!
-
-# SD
-
-sd(DF_3_Inny$wiedza)
-sd(DF_3_Biol$wiedza)
 
 ```
 
@@ -533,88 +340,19 @@ ggplot(DF_PAD_4, aes(x = D9, y = wiedza)) +
 
 ```{r}
 
-aov_2<-aov(wiedza ~ warunek, data = DF_PAD_3)
+aov_2<-aov(SUM_A ~ warunek, data = DF_PAD_3)
 summary(aov_2)
 
 #ANOVA istotna dla warunku; całkiem ciekawe
 plot(aov_2)
 # spełnione złożenia dla normalności, liniowości i jednorodności warinacji
 
-ggplot(DF_PAD_3, aes(x = warunek, y = wiedza)) +
+ggplot(DF_PAD_3, aes(x = warunek, y = SUM_A)) +
   geom_boxplot() + 
   theme_bw() +
   xlab("Warunek") +
-  ylab("Różnica wyników testów")
-
-```
-
-## ANOVA dla miejsca zamieszkania
-
-```{r}
-# przed prezentacją
-
-aov_1_D4<-aov(SUM_A ~ D4, data = DF_PAD_3)
-summary(aov_1_D4)
-plot(aov_1_D4)
-
-ggplot(DF_PAD_3, aes(x = D4, y = SUM_A)) +
-  geom_boxplot() + 
-  theme_bw() + 
-  xlab("Wielkość miejsca zamieszkania") + 
-  ylab("Wynik przed prezentacją")
-
-# po prezentacji
-
-aov_2_D4<-aov(wiedza ~ D4, data = DF_PAD_3)
-summary(aov_2_D4)
-plot(aov_2_D4)
-
-ggplot(DF_PAD_3, aes(x = D4, y = wiedza)) +
-  geom_boxplot() + 
-  theme_bw() + 
-  xlab("Wielkość miejsca zamieszkania") + 
-  ylab("Różnica wyników kwestionaiuszy")
-
-# istotny, robimy post hoc
-
-pairwise.t.test(DF_PAD_3$wiedza, DF_PAD_3$D4, p.adj = "none")
-TukeyHSD(aov_2_D4)
-
-```
-
-ggplot(DF_PAD_3, aes(x = D4, y = wiedza)) + geom_boxplot() + theme_bw() + xlab("Wielkość miejsca zamieszkania") + ylab("Różnica wyników kwestionaiuszy")
-
-## ANOVA dla wieku
-
-```{r}
-#przed prezentacją
-
-DF_PAD_3$wiek<-as.factor(DF_PAD_3$wiek)
-
-aov_1_wiek<-aov(SUM_A ~ wiek, data = DF_PAD_3)
-summary(aov_1_wiek)
-plot(aov_1_wiek)
-
-ggplot(DF_PAD_3, aes(x = wiek, y = SUM_A)) +
-  geom_boxplot() + 
-  theme_bw() + 
-  xlab("Wiek") + 
-  ylab("Wynik przed prezentacją")
-
-#po prezentacji
-
-aov_2_wiek<-aov(wiedza ~ wiek, data = DF_PAD_3)
-summary(aov_2_wiek)
-plot(aov_2_wiek)
-
-ggplot(DF_PAD_3, aes(x =wiek, y = wiedza)) +
-  geom_boxplot() + 
-  theme_bw() + 
-  xlab("Wiek") + 
-  ylab("Różnica wyników kwestionariuszy")
+  ylab("Wynik testu przed prezentacją")
 
 ```
 
 zostało nam wykonanie testów t :) :)
-
-na ten moment musimy pozmieniać tylko modele liniowe na ANOVA (tak jak poprawki olecha, wiek i miejsce zamieszkania)

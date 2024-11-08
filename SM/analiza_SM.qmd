@@ -864,7 +864,7 @@ DF_SM_4 %>%
 
 ```
 
-## Dominanta 
+## Dominanta
 
 #czesc 1 - dla SUM A i SUM B
 
@@ -990,6 +990,39 @@ ggplot(DF_SM_4, aes(x=SUM_B)) +
   facet_wrap(wiek) +
   theme_bw() + 
   xlab("Wynik testu po prezentacju") + 
+  ylab("Gęstość")
+
+# w podziale na miejsce zamieszkania
+
+d_D4A <- density(dominanta_a$SUM_A) 
+round(d_D4A$x[which.max(d_D4A$y)], 2)
+
+d_D4B <- density(dominanta_a$SUM_B) 
+round(d_D4B$x[which.max(d_D4B$y)], 2)
+#
+dominanta_b<-DF_SM_4 %>% 
+  filter(D4 == "Miasto od 100 000 do 500 000 mieszkańców")
+
+d_D4b <- density(dominanta_b$wiedza) 
+round(d_D4b$x[which.max(d_D4b$y)], 2) #4.72
+#
+dominanta_c<-DF_SM_4 %>% 
+  filter(D4 == "Miasto od 50 000 do 100 000 mieszkańców")
+
+d_D4c <- density(dominanta_c$wiedza) 
+round(d_D4c$x[which.max(d_D4c$y)], 2) #6.53
+#
+dominanta_d<-DF_SM_4 %>% 
+  filter(D4 == "Miasto powyżej 500 000 mieszkańców")
+
+d_D4d <- density(dominanta_d$wiedza) 
+round(d_D4d$x[which.max(d_D4d$y)], 2) #5,38
+#
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D4)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy") +
   ylab("Gęstość")
 ```
 
