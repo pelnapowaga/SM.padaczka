@@ -230,7 +230,7 @@ KMO(cor(answers_A))
 cortest.bartlett(cor(answers_A)) #H0: macierz korelacji jest identycznościowa - dane nie mają ze sobą nic wspólnego; mamy podstawy do orzucenia H0
 
 #właściwa EFA
-fit_1<-fa(r = answers_A, nfactors = 4, rotate = "varimax", cor = "tet")
+fit_1<-fa(r = answers_A, nfactors = 2, rotate = "varimax", cor = "tet")
 print(fit_1)
 
 # powinna byc dla danych tetrachorycznych, ale wtedy nie wychodzi; do przemyslenia 
