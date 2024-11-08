@@ -338,6 +338,7 @@ ggplot(DF_SM_4, aes(x = SUM_A)) +
   geom_density(aes(color = plec)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
+  theme(legend.title = element_text("Płeć")) +
   ylab("Gęstość") +
   xlab("Wynik testu przed prezentacją") +
   geom_vline(aes(xintercept = mean(k$SUM_A)), color = "red", linetype="dashed") + 
@@ -354,10 +355,11 @@ ggplot(DF_SM_4, aes(x = wiedza)) +
   geom_density(aes(color = plec)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
+  theme(legend.title = element_text("Płeć")) +
   ylab("Gęstość") +
   xlab("Różnica wyników kwestionariuszy") +
-  geom_vline(aes(xintercept = mean(k$SUM_B)), color = "red", linetype="dashed") + 
-  geom_vline(aes(xintercept = mean(m$SUM_B)), color = "#00CED1", linetype="dashed")
+  geom_vline(aes(xintercept = mean(k$wiedza)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(m$wiedza)), color = "#00CED1", linetype="dashed")
 
 # wykres gęstości przed prezentacją dla profilu 
 
@@ -383,8 +385,8 @@ ggplot(DF_SM_4, aes(x = wiedza)) +
   theme(legend.title = element_text("Profil klasy")) +
   ylab("Gęstość") +
   xlab("Różnica wyników kwestionariuszy") +
-  geom_vline(aes(xintercept = mean(I$SUM_B)), color = "red", linetype="dashed") + 
-  geom_vline(aes(xintercept = mean(B$SUM_B)), color = "#00CED1", linetype="dashed") 
+  geom_vline(aes(xintercept = mean(I$wiedza)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(B$wiedza)), color = "#00CED1", linetype="dashed") 
 
 # wykres gęstości przed prezentacją i po prezentacji 
 
@@ -414,12 +416,9 @@ ggplot(ggplot_df, aes(x = wynik)) +
   ylab("Wynik testu przed prezentacją")
 
 ```
- ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) +
-  geom_boxplot() +
-  theme_bw() +
-  xlab("Wielkość miejsca zamieszkania") + 
-  ylab("Wynik testu przed prezentacją")
-  
+
+ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) + geom_boxplot() + theme_bw() + xlab("Wielkość miejsca zamieszkania") + ylab("Wynik testu przed prezentacją")
+
 ## Przygotowanie danych do testów: test t i modele liniowe
 
 ```{r}
@@ -429,8 +428,6 @@ pivot_df <- DF_SM_3 %>%
   mutate(A = SUM_A, B = SUM_B) %>% 
   pivot_longer(cols = c(A, B), names_to = "test", values_to = "wynik") 
 
-view(pivot_df)
-str(pivot_df)
 ```
 
 ## Test t -
@@ -457,7 +454,8 @@ var.test(df_plec_m$SUM_A, df_plec_k$SUM_A)
 t.test(df_plec_m$SUM_A, df_plec_k$SUM_A,
        paired = FALSE,   
        var.equal = TRUE,
-       conf.level = 0.95)
+       conf.level = 0.95,
+       alternative = "less")
 
 cohensD(df_plec_m$SUM_A, df_plec_k$SUM_A)
 
@@ -544,7 +542,8 @@ var.test(DF_3_M$wiedza, DF_3_K$wiedza)
 t.test(DF_3_M$wiedza, DF_3_K$wiedza,
        paired = FALSE,   
        var.equal = TRUE,
-       conf.level = 0.95)
+       conf.level = 0.95,
+       alternative = "less")
 
 cohensD(DF_3_M$wiedza, DF_3_K$wiedza)
 

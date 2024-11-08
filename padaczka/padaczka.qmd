@@ -40,9 +40,6 @@ DF_PAD <- rbind(padaczka, sm_padaczka, padaczka_sm) %>%
 ## Przekodowanie zmiennych
 
 ```{r}
-table(DF_PAD$qa14)
-table(DF_PAD_2$qa14)
-
 DF_PAD_2 <- DF_PAD %>% 
   mutate(qa1 = ifelse(qa1 == "FALSE", 1, 0),
          qa2 = ifelse(qa2 == "FALSE", 1, 0),
@@ -75,15 +72,9 @@ DF_PAD_2 <- DF_PAD %>%
          qb14 = ifelse(qb14 == "Przewlekła choroba neurologiczna", 1, 0),
          qb15 = ifelse(qb15 == "Osoby chorujące na padaczkę muszą przyjmować leki do końca swojego życia", 1, 0)) 
 
-str(DF_PAD_2)
-table(DF_PAD$narodowosc)
 ```
 
 ```{r}
-table(DF_PAD$wiek)
-table(DF_PAD_2$wiek)
-table(DF_PAD$plec) 
-table(DF_PAD$plec, DF_PAD$wiek)
 
 DF_PAD_2 <- DF_PAD_2 %>% 
   filter(plec == "Kobieta" | plec == "Mężczyzna") %>% 
@@ -266,7 +257,9 @@ ggplot(ggplot_df, aes(x = wynik)) +
   theme_bw() + 
   theme(legend.position="bottom") + 
   ylab("Gęstość") +
-  xlab("Wynik testu")
+  xlab("Wynik testu") +
+  geom_vline(aes(xintercept = mean(ggplot_df$SUM_A)), color = "red", linetype="dashed") + 
+  geom_vline(aes(xintercept = mean(ggplot_df$SUM_B)), color = "#00CED1", linetype="dashed")
 
 
 # gęstość przed prezentacją w podziale na płeć 
@@ -298,16 +291,6 @@ ggplot(DF_PAD_3, aes(x = SUM_A)) +
 
 B <- DF_PAD_3 %>% filter(D5 == "Z rozszerzoną biologią")
 I <- DF_PAD_3 %>% filter(D5 == "Inny")
-  
-
-# gęstość w podziale na miejsce zamieszkania
-
-ggplot(ggplot_df, aes(x = wynik)) + 
-  geom_density(aes(color = test)) +
-  theme_bw() + 
-  theme(legend.position="bottom") + 
-  ylab("Gęstość") +
-  facet_wrap(vars(D4))
 
 # gęstość w podziale na płeć dla wiedzy
 
@@ -355,6 +338,7 @@ str(pivot_df_pad)
 ## Testy t
 
 #pkt 1 - testy t dla plec i profil klasy przed prezentacją
+
 ```{r}
 
 #dla PŁCI
@@ -420,7 +404,8 @@ sd(df_D5b$SUM_A)
 
 ```
 
-#pkt 2 - testy t dla przed i po prezentacji 
+#pkt 2 - testy t dla przed i po prezentacji
+
 ```{r}
 
 #dla zmiennej test - t.test dla prób zależnych
@@ -443,6 +428,7 @@ cohensD(DF_PAD_3$SUM_A, DF_PAD_3$SUM_B)
 ```
 
 #pkt 3 - testy t dla plec i profil klasy po prezentacji
+
 ```{r}
 #płeć
 
@@ -547,26 +533,28 @@ ggplot(DF_PAD_4, aes(x = D9, y = wiedza)) +
 
 ```{r}
 
-aov_2<-aov(SUM_A ~ warunek, data = DF_PAD_3)
+aov_2<-aov(wiedza ~ warunek, data = DF_PAD_3)
 summary(aov_2)
 
 #ANOVA istotna dla warunku; całkiem ciekawe
 plot(aov_2)
 # spełnione złożenia dla normalności, liniowości i jednorodności warinacji
 
-ggplot(DF_PAD_3, aes(x = warunek, y = SUM_A)) +
+ggplot(DF_PAD_3, aes(x = warunek, y = wiedza)) +
   geom_boxplot() + 
   theme_bw() +
   xlab("Warunek") +
-  ylab("Wynik testu przed prezentacją")
+  ylab("Różnica wyników testów")
 
 ```
 
-## ANOVA dla miejsca zamieszkania 
+## ANOVA dla miejsca zamieszkania
+
 ```{r}
 # przed prezentacją
 
 aov_1_D4<-aov(SUM_A ~ D4, data = DF_PAD_3)
+summary(aov_1_D4)
 plot(aov_1_D4)
 
 ggplot(DF_PAD_3, aes(x = D4, y = SUM_A)) +
@@ -577,16 +565,24 @@ ggplot(DF_PAD_3, aes(x = D4, y = SUM_A)) +
 
 # po prezentacji
 
-aov_2_D4<-aov(SUM_B ~ D4, data = DF_PAD_3)
+aov_2_D4<-aov(wiedza ~ D4, data = DF_PAD_3)
+summary(aov_2_D4)
 plot(aov_2_D4)
 
-ggplot(DF_PAD_3, aes(x = D4, y = SUM_B)) +
+ggplot(DF_PAD_3, aes(x = D4, y = wiedza)) +
   geom_boxplot() + 
   theme_bw() + 
   xlab("Wielkość miejsca zamieszkania") + 
-  ylab("Wynik przed prezentacją")
+  ylab("Różnica wyników kwestionaiuszy")
+
+# istotny, robimy post hoc
+
+pairwise.t.test(DF_PAD_3$wiedza, DF_PAD_3$D4, p.adj = "none")
+TukeyHSD(aov_2_D4)
 
 ```
+
+ggplot(DF_PAD_3, aes(x = D4, y = wiedza)) + geom_boxplot() + theme_bw() + xlab("Wielkość miejsca zamieszkania") + ylab("Różnica wyników kwestionaiuszy")
 
 ## ANOVA dla wieku
 
@@ -596,29 +592,29 @@ ggplot(DF_PAD_3, aes(x = D4, y = SUM_B)) +
 DF_PAD_3$wiek<-as.factor(DF_PAD_3$wiek)
 
 aov_1_wiek<-aov(SUM_A ~ wiek, data = DF_PAD_3)
+summary(aov_1_wiek)
 plot(aov_1_wiek)
 
 ggplot(DF_PAD_3, aes(x = wiek, y = SUM_A)) +
   geom_boxplot() + 
   theme_bw() + 
-  xlab("Wielkość miejsca zamieszkania") + 
+  xlab("Wiek") + 
   ylab("Wynik przed prezentacją")
 
 #po prezentacji
 
-aov_2_wiek<-aov(SUM_B ~ wiek, data = DF_PAD_3)
+aov_2_wiek<-aov(wiedza ~ wiek, data = DF_PAD_3)
+summary(aov_2_wiek)
 plot(aov_2_wiek)
 
-ggplot(DF_PAD_3, aes(x =wiek, y = SUM_B)) +
+ggplot(DF_PAD_3, aes(x =wiek, y = wiedza)) +
   geom_boxplot() + 
   theme_bw() + 
-  xlab("Wielkość miejsca zamieszkania") + 
-  ylab("Wynik przed prezentacją")
+  xlab("Wiek") + 
+  ylab("Różnica wyników kwestionariuszy")
 
 ```
 
 zostało nam wykonanie testów t :) :)
 
 na ten moment musimy pozmieniać tylko modele liniowe na ANOVA (tak jak poprawki olecha, wiek i miejsce zamieszkania)
-
-
