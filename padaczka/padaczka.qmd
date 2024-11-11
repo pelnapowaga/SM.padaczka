@@ -457,39 +457,49 @@ ggplot(DF_PAD_3, aes(x = SUM_B)) +
   xlab("Wynik testu po prezentacji")+
   ylab("Gęstość")
 
-# w podziale na płeć
+```{r} 
 
-d_kobiety_A <- density(df_plec_k$SUM_A) 
-round(d_kobiety_A$x[which.max(d_kobiety_A$y)], 2) #0,43
+# w podziale na płeć - SUM A
 
-d_mezczyzni_A <- density(df_plec_m$SUM_A)
-round(d_mezczyzni_A$x[which.max(d_mezczyzni_A$y)], 2) #0,42
+kobiety <- DF_PAD_3 %>% filter(plec == "Kobieta")
 
-ggplot(DF_SM_4, aes(x = SUM_A)) +
+d_kobiety_A <- density(kobiety$SUM_A) 
+round(d_kobiety_A$x[which.max(d_kobiety_A$y)], 2) #9.12
+
+mezczyzni <- DF_PAD_3 %>% filter(plec == "Mężczyzna")
+
+d_mezczyzni_A <- density(mezczyzni$SUM_A)
+round(d_mezczyzni_A$x[which.max(d_mezczyzni_A$y)], 2) #9.91
+
+ggplot(DF_PAD_3, aes(x = SUM_A)) +
   geom_density() +
   facet_wrap(vars(plec)) +
   theme_bw() + 
   xlab("Wynik testu przed prezentacją") +
   ylab("Gęstość")
 
-d_kobiety_B <- density(df_plec_k$SUM_B) 
-round(d_kobiety_B$x[which.max(d_kobiety_B$y)], 2) #13,02
+# w podziale na płeć - SUM B
 
-d_mezczyzni_B <- density(df_plec_m$SUM_B)
-round(d_mezczyzni_B$x[which.max(d_mezczyzni_B$y)], 2) #13,02
+d_kobiety_B <- density(kobiety$SUM_B) 
+round(d_kobiety_B$x[which.max(d_kobiety_B$y)], 2) #14.01
 
-ggplot(DF_SM_4, aes(x = SUM_A)) +
+d_mezczyzni_B <- density(mezczyzni$SUM_B)
+round(d_mezczyzni_B$x[which.max(d_mezczyzni_B$y)], 2) #13.98
+
+ggplot(DF_PAD_3, aes(x = SUM_B)) +
   geom_density() +
   facet_wrap(vars(plec)) +
   theme_bw() + 
   xlab("Wynik testu przed prezentacją") +
   ylab("Gęstość")
+```
 
+```{r}
 # w podziale na wiek
 
 #14
 
-d_14<-DF_SM_4 %>% 
+d_14<-DF_PAD_3 %>% 
   filter(wiek == 14)
 
 d_14A <- density(d_14$SUM_A) 
@@ -499,63 +509,70 @@ d_14B <- density(d_14$SUM_B)
 round(d_14B$x[which.max(d_14B$y)], 2) #12,20
 
 #15
-d_15<-DF_SM_4 %>% 
+d_15<-DF_PAD_3 %>% 
   filter(wiek == 15)
 
 d_15A <- density(d_15$SUM_A) 
-round(d_15A$x[which.max(d_15A$y)], 2) #0,41
+round(d_15A$x[which.max(d_15A$y)], 2) #9.3
 
 d_15B <- density(d_15$SUM_B) 
-round(d_15B$x[which.max(d_15B$y)], 2) #13,07
+round(d_15B$x[which.max(d_15B$y)], 2) #13.06
 
 #16
 
-d_16<-DF_SM_4 %>% 
+d_16<-DF_PAD_3 %>% 
   filter(wiek == 16)
 
 d_16A <- density(d_16$SUM_A) 
-round(d_16A$x[which.max(d_16A$y)], 2) #0,71
+round(d_16A$x[which.max(d_16A$y)], 2) #9.89
 
 d_16B <- density(d_16$SUM_B) 
-round(d_16B$x[which.max(d_16B$y)], 2) #13,19
+round(d_16B$x[which.max(d_16B$y)], 2) #13.97
 
 
 #17
-d_17<-DF_SM_4 %>% 
+d_17<-DF_PAD_3 %>% 
   filter(wiek == 17)
 
 d_17A <- density(d_17$SUM_A) 
-round(d_17A$x[which.max(d_17A$y)], 2) #9,39
+round(d_17A$x[which.max(d_17A$y)], 2) #11.38
 
 d_17B <- density(d_17$SUM_B) 
-round(d_17B$x[which.max(d_17B$y)], 2) #13
+round(d_17B$x[which.max(d_17B$y)], 2) #14
 
 #18
 
-d_18<-DF_SM_4 %>% 
+d_18<-DF_PAD_3 %>% 
   filter(wiek == 18)
 
 d_18A <- density(d_18$SUM_A) 
-round(d_18A$x[which.max(d_18A$y)], 2) #8,83
+round(d_18A$x[which.max(d_18A$y)], 2) #10.97
 
 d_18B <- density(d_18$SUM_B) 
-round(d_18B$x[which.max(d_18B$y)], 2) #13,45
+round(d_18B$x[which.max(d_18B$y)], 2) #13.89
 
 # wykresy
-ggplot(DF_SM_4, aes(x=SUM_A)) +
+
+ggplot(DF_PAD_3, aes(x=SUM_A)) +
   geom_density() + 
   facet_wrap(wiek) +
   theme_bw() + 
   xlab("Wynik testu przed prezentacją") + 
   ylab("Gęstość")
 
-ggplot(DF_SM_4, aes(x=SUM_B)) +
+ggplot(DF_PAD_3, aes(x=SUM_B)) +
   geom_density() + 
   facet_wrap(wiek) +
   theme_bw() + 
   xlab("Wynik testu po prezentacju") + 
   ylab("Gęstość")
 
+
+names(DF_PAD_3)
+
+```
+
+```{r}
 # w podziale na miejsce zamieszkania
 
 d_D4aA <- density(dominanta_a$SUM_A) 
@@ -601,6 +618,9 @@ ggplot(DF_SM_4, aes(x = SUM_B)) +
   theme_bw() + 
   xlab("Wynik testu po prezentacji") +
   ylab("Gęstość")
+```
+
+```{r}
 
 # w podziale na profil klasy
 
@@ -693,8 +713,8 @@ round(d_18$x[which.max(d_18$y)], 2) #5,01
 
 ```
 
-
 #przyrost w podziale na wszystkie zmienne
+
 ```{r}
 #D4
 
@@ -814,11 +834,3 @@ ggplot(DF_SM_4, aes(x = wiedza)) +
 
 
 ```
-
-
-
-
-
-
-
-
