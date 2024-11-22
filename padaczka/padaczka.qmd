@@ -3,13 +3,18 @@ title: "Padaczka_SM"
 author: "Agata Adamczyk"
 format: html
 editor: visual
-date-modified: 25.08
+date-modified: 20.11
 ---
 
 ```{r}
+
 library(readxl)
 library(tidyverse)
 library(psych)
+library(writexl)
+
+DF_PAD_2 %>% 
+write_xlsx("baza.danych.padaczka.xlsx")
 
 ```
 
@@ -165,7 +170,8 @@ DF_PAD_3 <- DF_PAD_2 %>%
            DF_PAD_2 %>% 
            select(starts_with("qb")) %>% 
            rowSums) %>% 
-  select(-starts_with(c("qa", "qb")))
+  select(-starts_with(c("qa", "qb"))) %>% 
+  mutate(wiedza = SUM_B - SUM_A)
 
 ```
 
@@ -295,42 +301,20 @@ str(pivot_df_pad)
 
 ```
 
-## Modele liniowe
+## ANOVA
 
 ```{r}
 DF_PAD_4 <- DF_PAD_3 %>% 
   mutate(wiedza = SUM_B - SUM_A)
 
-#MODEL 1
-
-mod1 <- lm(wiedza ~ D4, data = DF_PAD_4)
+mod1 <- aov(SUM_A ~ D4, data = DF_PAD_4)
 summary(mod1)
-#istotny intercept i 50 000 - 100 000 mieszkańców
+plot(mod1)
 
-plot(mod1, which = 1)
-plot(mod1, which = 2)
-plot(mod1, which = 3)
-
-#wszystkie warunki są spełnione; doczytać jeszcze o 3 wykresie i warością powyżje 2
-
-ggplot(DF_PAD_4, aes(x = D4, y = wiedza)) +
-  geom_boxplot() +
-  theme_bw()
-
-#MODEL 2
-
-mod2 <- lm(wiedza ~ D9, data = DF_PAD_4)
+mod2 <- aov(wiedza ~ D4, data = DF_PAD_4)
 summary(mod2)
+plot(mod2)
 
-plot(mod2, which = 1)
-plot(mod2, which = 2)
-plot(mod2, which = 3)
-
-#wszystkie warunki są spełnione; doczytać jeszcze o 3 wykresie i warością powyżje 2
-
-ggplot(DF_PAD_4, aes(x = D9, y = wiedza)) +
-  geom_boxplot() +
-  theme_bw()
 ```
 
 ## ANOVA dla warunków
@@ -388,6 +372,10 @@ DF_PAD_3 %>%
   summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
             min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
 
+DF_PAD_3 %>% 
+  group_by(D8) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
 
 ```
 
@@ -426,6 +414,12 @@ DF_PAD_3 %>%
   group_by(D5) %>% 
   summarise(min = min(wiedza), max = max(wiedza), M = round(mean(wiedza), 2))
 
+#D8
+
+DF_PAD_3 %>% 
+  group_by(D8) %>% 
+  summarise(min = min(wiedza), max = max(wiedza), M = round(mean(wiedza), 2))
+
 ```
 
 ## Dominanta
@@ -437,7 +431,7 @@ DF_PAD_3 %>%
 #dla SUM A
 
 d_SUM_A <- density(DF_PAD_3$SUM_A)
-round(d_SUM_A$x[which.max(d_SUM_A$y)], 2) #0,33
+round(d_SUM_A$x[which.max(d_SUM_A$y)], 2) #9.72
 
 ggplot(DF_PAD_3, aes(x = SUM_A)) +
   geom_density() +
@@ -449,7 +443,7 @@ ggplot(DF_PAD_3, aes(x = SUM_A)) +
 #dla SUM B
 
 d_SUM_B <- density(DF_PAD_3$SUM_B)
-round(d_SUM_B$x[which.max(d_SUM_B$y)], 2) #12.99
+round(d_SUM_B$x[which.max(d_SUM_B$y)], 2) #14.01
 
 ggplot(DF_PAD_3, aes(x = SUM_B)) +
   geom_density() +
@@ -457,7 +451,9 @@ ggplot(DF_PAD_3, aes(x = SUM_B)) +
   xlab("Wynik testu po prezentacji")+
   ylab("Gęstość")
 
-```{r} 
+```
+
+```{r}
 
 # w podziale na płeć - SUM A
 
@@ -490,7 +486,7 @@ ggplot(DF_PAD_3, aes(x = SUM_B)) +
   geom_density() +
   facet_wrap(vars(plec)) +
   theme_bw() + 
-  xlab("Wynik testu przed prezentacją") +
+  xlab("Wynik testu po prezentacji") +
   ylab("Gęstość")
 ```
 
@@ -503,10 +499,10 @@ d_14<-DF_PAD_3 %>%
   filter(wiek == 14)
 
 d_14A <- density(d_14$SUM_A) 
-round(d_14A$x[which.max(d_14$y)], 2) #0,61
+round(d_14A$x[which.max(d_14A$y)], 2) #8.25
 
 d_14B <- density(d_14$SUM_B) 
-round(d_14B$x[which.max(d_14B$y)], 2) #12,20
+round(d_14B$x[which.max(d_14B$y)], 2) #14
 
 #15
 d_15<-DF_PAD_3 %>% 
@@ -569,50 +565,61 @@ ggplot(DF_PAD_3, aes(x=SUM_B)) +
 
 
 names(DF_PAD_3)
+as.factor(wiek)
 
 ```
 
 ```{r}
 # w podziale na miejsce zamieszkania
 
-d_D4aA <- density(dominanta_a$SUM_A) 
-round(d_D4aA$x[which.max(d_D4aA$y)], 2) #0,58
+miasto_1 <- DF_PAD_3 %>% 
+  filter(D4 == "Miasto do 50 000 mieszkańców")
 
-d_D4aB <- density(dominanta_a$SUM_B) 
-round(d_D4aB$x[which.max(d_D4aB$y)], 2) #12,98
-#
+d_miasto_1A <- density(miasto_1$SUM_A) 
+round(d_miasto_1A$x[which.max(d_miasto_1A$y)], 2) #10.14
 
-d_D4bA <- density(dominanta_b$SUM_A) 
-round(d_D4bA$x[which.max(d_D4bA$y)], 2) #5,24
-
-d_D4bB <- density(dominanta_b$SUM_B) 
-round(d_D4bB$x[which.max(d_D4bB$y)], 2) #13,61
-#
-
-d_D4cA <- density(dominanta_c$SUM_A) 
-round(d_D4cA$x[which.max(d_D4cA$y)], 2) #5,28
-
-d_D4cB <- density(dominanta_c$SUM_B) 
-round(d_D4cB$x[which.max(d_D4cB$y)], 2) #13,35
+d_miasto_1B <- density(miasto_1$SUM_B) 
+round(d_miasto_1B$x[which.max(d_miasto_1B$y)], 2) #13.91
 
 #
+miasto_2 <- DF_PAD_3 %>% 
+  filter(D4 == "Miasto od 50 000 do 100 000 mieszkańców")
 
-d_D4dA <- density(dominanta_d$SUM_A) 
-round(d_D4dA$x[which.max(d_D4dA$y)], 2) #0,37
+d_miasto_2A <- density(miasto_2$SUM_A) 
+round(d_miasto_2A$x[which.max(d_miasto_2A$y)], 2) #10.55
 
-d_D4dB <- density(dominanta_d$SUM_B) 
-round(d_D4dB$x[which.max(d_D4dB$y)], 2) #12,98
-
+d_miasto_2B <- density(miasto_2$SUM_B) 
+round(d_miasto_2B$x[which.max(d_miasto_2B$y)], 2) #13.84
 
 #
-ggplot(DF_SM_4, aes(x = SUM_A)) +
+miasto_3 <- DF_PAD_3 %>% 
+  filter(D4 == "Miasto od 100 000 do 500 000 mieszkańców")
+
+d_miasto_3A <- density(miasto_3$SUM_A) 
+round(d_miasto_3A$x[which.max(d_miasto_3A$y)], 2) #9.42
+
+d_miasto_3B <- density(miasto_3$SUM_B) 
+round(d_miasto_3B$x[which.max(d_miasto_3B$y)], 2) #13.19
+
+#
+miasto_4 <- DF_PAD_3 %>% 
+  filter(D4 == "Miasto powyżej 500 000 mieszkańców")
+
+d_miasto_4A <- density(miasto_4$SUM_A) 
+round(d_miasto_4A$x[which.max(d_miasto_4A$y)], 2) #8.85
+
+d_miasto_4B <- density(miasto_4$SUM_B) 
+round(d_miasto_4B$x[which.max(d_miasto_4B$y)], 2) #14
+
+#
+ggplot(DF_PAD_3, aes(x = SUM_A)) +
   geom_density() +
   facet_wrap(vars(D4)) +
   theme_bw() + 
   xlab("Wynik testu przed prezentacją") +
   ylab("Gęstość")
 
-ggplot(DF_SM_4, aes(x = SUM_B)) +
+ggplot(DF_PAD_3, aes(x = SUM_B)) +
   geom_density() +
   facet_wrap(vars(D4)) +
   theme_bw() + 
@@ -624,26 +631,32 @@ ggplot(DF_SM_4, aes(x = SUM_B)) +
 
 # w podziale na profil klasy
 
-d_BiolA <- density(DF_3_Biol$SUM_A) 
-round(d_BiolA$x[which.max(d_BiolA$y)], 2) #0,35
+biol <- DF_PAD_3 %>% 
+  filter(D5 == "Z rozszerzoną biologią")
 
-d_BiolB <- density(DF_3_Biol$SUM_B) 
-round(d_BiolB$x[which.max(d_BiolB$y)], 2) #13
+Inny <- DF_PAD_3 %>% 
+  filter(D5 == "Inny")
 
-d_InnyA <- density(DF_3_Inny$SUM_A) 
-round(d_InnyA$x[which.max(d_InnyA$y)], 2) #0,82
+d_BiolA <- density(biol$SUM_A) 
+round(d_BiolA$x[which.max(d_BiolA$y)], 2) #10
 
-d_InnyB <- density(DF_3_Inny$SUM_B) 
+d_BiolB <- density(biol$SUM_B) 
+round(d_BiolB$x[which.max(d_BiolB$y)], 2) #13.99
+
+d_InnyA <- density(Inny$SUM_A) 
+round(d_InnyA$x[which.max(d_InnyA$y)], 2) #8.62
+
+d_InnyB <- density(Inny$SUM_B) 
 round(d_InnyB$x[which.max(d_InnyB$y)], 2) #13,17
 
-ggplot(DF_SM_4, aes(x = SUM_A)) +
+ggplot(DF_PAD_3, aes(x = SUM_A)) +
   geom_density() +
   facet_wrap(vars(D5)) +
   theme_bw() + 
   xlab("Wynik testu przed prezentacją")+
   ylab("Gęstość")
 
-ggplot(DF_SM_4, aes(x = SUM_B)) +
+ggplot(DF_PAD_3, aes(x = SUM_B)) +
   geom_density() +
   facet_wrap(vars(D5)) +
   theme_bw() + 
@@ -652,33 +665,53 @@ ggplot(DF_SM_4, aes(x = SUM_B)) +
 
 ```
 
+```{r}
+#D8
+
+d_D8_tak<- density(D8_tak$SUM_A) 
+round(d_D8_tak$x[which.max(d_D8_tak$y)], 2) #9,94
+
+d_D8_tak<- density(D8_tak$SUM_B) 
+round(d_D8_tak$x[which.max(d_D8_tak$y)], 2) #13,87
+
+d_D8_nie<- density(D8_nie$SUM_A) 
+round(d_D8_nie$x[which.max(d_D8_nie$y)], 2) #9,08
+
+d_D8_nie<- density(D8_nie$SUM_B) 
+round(d_D8_nie$x[which.max(d_D8_nie$y)], 2) #13,98
+
+```
+
 #czesc 2 - dla przyrostu
 
 ```{r}
 
-d_SM_4 <- density(DF_SM_4$wiedza) 
-round(d_SM_4$x[which.max(d_SM_4$y)], 2) #4.91 
+przyrost <- density(DF_PAD_3$wiedza) 
+round(przyrost$x[which.max(przyrost$y)], 2) #3.09
 
-ggplot(DF_SM_4, aes(x = wiedza)) +
+ggplot(DF_PAD_3, aes(x = wiedza)) +
   geom_density() +
   theme_bw() + 
   xlab("Przyrost wiedzy") +
   ylab("Gęstość")
+```
+
+```{r}
 
 #przyrost w podziale na płeć
 
-d_kobiety <- density(DF_3_K$wiedza) 
-round(d_kobiety$x[which.max(d_kobiety$y)], 2) #4.77
+d_kobiety <- density(kobiety$wiedza) 
+round(d_kobiety$x[which.max(d_kobiety$y)], 2) #3.82
 
-d_mezczyzni <- density(DF_3_M$wiedza)
-round(d_mezczyzni$x[which.max(d_mezczyzni$y)], 2) #7
+d_mezczyzni <- density(mezczyzni$wiedza)
+round(d_mezczyzni$x[which.max(d_mezczyzni$y)], 2) #2.79
 
-ggplot(DF_SM_4, aes(x = wiedza)) +
+ggplot(DF_PAD_3, aes(x = wiedza)) +
   geom_density() +
   facet_wrap(vars(plec)) +
   theme_bw() + 
   xlab("Przyrost wiedzy") +
-  ylab("Gęstość") `
+  ylab("Gęstość") 
 
 ```
 
@@ -687,143 +720,94 @@ ggplot(DF_SM_4, aes(x = wiedza)) +
 
 #14
 
-d_14 <- density(d_14$wiedza) 
-round(d_14$x[which.max(d_14$y)], 2) #11,08
+d_14_przyrost <- density(d_14$wiedza) 
+round(d_14_przyrost$x[which.max(d_14_przyrost$y)], 2) #4.06
 
 #15
 
-d_15 <- density(d_15$wiedza) 
-round(d_15$x[which.max(d_15$y)], 2) #5,31
+d_15_przyrost <- density(d_15$wiedza) 
+round(d_15_przyrost$x[which.max(d_15_przyrost$y)], 2) #2.46
 
 #16
 
-d_16 <- density(d_16$wiedza) 
-round(d_16$x[which.max(d_16$y)], 2) #5,21
+d_16_przyrost <- density(d_16$wiedza) 
+round(d_16_przyrost$x[which.max(d_16_przyrost$y)], 2) #4.27
 
 
 #17
 
-d_17 <- density(d_17$wiedza) 
-round(d_17$x[which.max(d_17$y)], 2) #3,25
+d_17_przyrost <- density(d_17$wiedza) 
+round(d_17_przyrost$x[which.max(d_17_przyrost$y)], 2) #2.22
 
 #18
 
-d_18 <- density(d_18$wiedza) 
-round(d_18$x[which.max(d_18$y)], 2) #5,01
+d_18_przyrost <- density(d_18$wiedza) 
+round(d_18_przyrost$x[which.max(d_18_przyrost$y)], 2) #1,30
 
 ```
-
-#przyrost w podziale na wszystkie zmienne
 
 ```{r}
 #D4
 
-table(DF_SM_4$D4)
-
-dominanta_a<-DF_SM_4 %>% 
-  filter(D4 == "Miasto do 50 000 mieszkańców")
-
-d_D4a <- density(dominanta_a$wiedza) 
-round(d_D4a$x[which.max(d_D4a$y)], 2) #4,45
+miasto_1_przyrost <- density(miasto_1$wiedza) 
+round(miasto_1_przyrost $x[which.max(miasto_1_przyrost $y)], 2) #3.87
 #
-dominanta_b<-DF_SM_4 %>% 
-  filter(D4 == "Miasto od 100 000 do 500 000 mieszkańców")
 
-d_D4b <- density(dominanta_b$wiedza) 
-round(d_D4b$x[which.max(d_D4b$y)], 2) #4.72
+miasto_2_przyrost <- density(miasto_2$wiedza) 
+round(miasto_2_przyrost$x[which.max(miasto_2_przyrost$y)], 2) #1.51
 #
-dominanta_c<-DF_SM_4 %>% 
-  filter(D4 == "Miasto od 50 000 do 100 000 mieszkańców")
 
-d_D4c <- density(dominanta_c$wiedza) 
-round(d_D4c$x[which.max(d_D4c$y)], 2) #6.53
+miasto_3_przyrost <- density(miasto_3$wiedza) 
+round(miasto_3_przyrost$x[which.max(miasto_3_przyrost$y)], 2) #3.06
 #
-dominanta_d<-DF_SM_4 %>% 
-  filter(D4 == "Miasto powyżej 500 000 mieszkańców")
 
-d_D4d <- density(dominanta_d$wiedza) 
-round(d_D4d$x[which.max(d_D4d$y)], 2) #5,38
+miasto_4_przyrost <- density(miasto_4$wiedza) 
+round(miasto_4_przyrost$x[which.max(miasto_4_przyrost$y)], 2) #3.9
+
 #
-ggplot(DF_SM_4, aes(x = wiedza)) +
+ggplot(DF_PAD_3, aes(x = wiedza)) +
   geom_density() +
   facet_wrap(vars(D4)) +
   theme_bw() + 
   xlab("Przyrost wiedzy") +
   ylab("Gęstość")
 
+```
+
+```{r}
+
 #D5 - profil klasy
 
-d_Biol <- density(DF_3_Biol$wiedza) 
-round(d_Biol$x[which.max(d_Biol$y)], 2)#5.07
+biol_przyrotst <- density(biol$wiedza) 
+round(biol_przyrotst$x[which.max(biol_przyrotst$y)], 2)#3.83
 
-d_Inny <- density(DF_3_Inny$wiedza) 
-round(d_Inny$x[which.max(d_Inny$y)], 2) #11,66
+Inny_przyrost <- density(Inny$wiedza) 
+round(Inny_przyrost$x[which.max(Inny_przyrost$y)], 2) #3.2
 
-ggplot(DF_SM_4, aes(x = wiedza)) +
+ggplot(DF_PAD_3, aes(x = wiedza)) +
   geom_density() +
   facet_wrap(vars(D5)) +
   theme_bw() + 
   xlab("Przyrost wiedzy")+
   ylab("Gęstość")
 
-#D6 - czy słyszałeś kiedyś o SM
+```
 
-D6_tak <- DF_SM_4 %>% 
-  filter(D6 == "Tak")
+```{r}
 
-d_D6_tak<- density(D6_tak$wiedza) 
-round(d_D6_tak$x[which.max(d_D6_tak$y)], 2) #4,64
-#
-D6_nie <-DF_SM_4 %>% 
-  filter(D6 == "Nie")
+#D8 - czy znasz kogoś chorującego na padaczkę
 
-d_D6_nie<- density(D6_nie$wiedza) 
-round(d_D6_nie$x[which.max(d_D6_nie$y)], 2) #11,82
-
-ggplot(DF_SM_4, aes(x = wiedza)) +
-  geom_density() +
-  facet_wrap(vars(D6)) +
-  theme_bw() + 
-  xlab("Przyrost wiedzy")+
-  ylab("Gęstość")
-
-#D7 - źródło wiedzy
-
-d_inne_D7<- density(inne$wiedza) 
-round(d_inne_D7$x[which.max(d_inne_D7$y)], 2) #8,06
-
-d_internet <- density(internet$wiedza) 
-round(d_internet$x[which.max(d_internet$y)], 2) #4,45
-
-d_rodzina<- density(rodzina$wiedza) 
-round(d_rodzina$x[which.max(d_rodzina$y)], 2) #4,52
-
-d_szkola <- density(szkola$wiedza) 
-round(d_szkola$x[which.max(d_szkola$y)], 2) #4,95
-
-d_znajomi <- density(znajomi$wiedza) 
-round(d_znajomi$x[which.max(d_znajomi$y)], 2) #4,53
-
-ggplot(D7, aes(x = wiedza)) +
-  geom_density() +
-  facet_wrap(vars(zrodlo)) +
-  theme_bw() + 
-  xlab("Przyrost wiedzy")+
-  ylab("Gęstość")
-
-#D8 - czy znasz kogoś chorującego na SM
-
-D8_tak <- DF_SM_4 %>% 
+D8_tak <- DF_PAD_3 %>% 
   filter(D8 == "Tak")
 
 d_D8_tak<- density(D8_tak$wiedza) 
-round(d_D8_tak$x[which.max(d_D8_tak$y)], 2) #4,33
+round(d_D8_tak$x[which.max(d_D8_tak$y)], 2) #3,05
 #
-D8_nie <-DF_SM_4 %>% 
+D8_nie <-DF_PAD_3 %>% 
   filter(D8 == "Nie")
 
 d_D8_nie<- density(D8_nie$wiedza) 
-round(d_D8_nie$x[which.max(d_D8_nie$y)], 2) #5,18
+round(d_D8_nie$x[which.max(d_D8_nie$y)], 2) #3,80
 
 ggplot(DF_SM_4, aes(x = wiedza)) +
   geom_density() +
@@ -834,3 +818,299 @@ ggplot(DF_SM_4, aes(x = wiedza)) +
 
 
 ```
+
+# dominanta 2
+
+## przyrost
+
+```{r}
+sink("przyrost.txt")
+sort((table(DF_PAD_4$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_plec_k.txt")
+sort((table(kobiety$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_m.txt")
+sort((table(mezczyzni$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_14.txt")
+sort((table(d_14$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_15.txt")
+sort((table(d_15$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_16.txt")
+sort((table(d_16$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_17.txt")
+sort((table(d_17$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_18.txt")
+sort((table(d_18$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_A.txt")
+sort((table(miasto_1$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_B.txt")
+sort((table(miasto_2$wiedza)))
+sink()
+```
+
+```{r}
+sink("wprzyrost_C.txt")
+sort((table(miasto_3$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_D.txt")
+sort((table(miasto_4$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_biol.txt")
+sort((table(biol$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_inny.txt")
+sort((table(Inny$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_D8_tak.txt")
+sort((table(D8_tak$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_D8_nie.txt")
+sort((table(D8_nie$wiedza)))
+sink()
+```
+
+## SUM A i SUM B
+
+```{r}
+sink("wynik_przed_prezentacją.txt")
+sort((table(DF_PAD_4$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji.txt")
+sort((table(DF_PAD_4$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_plec_k.txt")
+sort((table(kobiety$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_plec_k.txt")
+sort((table(kobiety$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_plec_m.txt")
+sort((table(mezczyzni$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_plec_m.txt")
+sort((table(mezczyzni$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_14.txt")
+sort((table(d_14$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_15.txt")
+sort((table(d_15$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_16.txt")
+sort((table(d_16$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_17.txt")
+sort((table(d_17$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_18.txt")
+sort((table(d_18$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_14.txt")
+sort((table(d_14$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_15.txt")
+sort((table(d_15$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_16.txt")
+sort((table(d_16$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_17.txt")
+sort((table(d_17$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_18.txt")
+sort((table(d_18$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_A.txt")
+sort((table(miasto_1$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_B.txt")
+sort((table(miasto_2$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_C.txt")
+sort((table(miasto_3$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_D.txt")
+sort((table(miasto_4$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_A.txt")
+sort((table(miasto_1$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_B.txt")
+sort((table(miasto_2$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_C.txt")
+sort((table(miasto_3$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_D.txt")
+sort((table(miasto_4$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_biol.txt")
+sort((table(biol$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_inny.txt")
+sort((table(Inny$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_biol.txt")
+sort((table(biol$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_inny.txt")
+sort((table(Inny$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_D8_tak.txt")
+sort((table(D8_tak$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_D8_nie.txt")
+sort((table(D8_nie$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_D8_tak.txt")
+sort((table(D8_tak$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_D8_nie.txt")
+sort((table(D8_nie$SUM_B)))
+sink()
+```
+
+

@@ -3,19 +3,23 @@ title: "SManaliza"
 author: Agata Adamczyk
 format: docx
 editor: visual
-date-modified: 19.09
+date-modified: 20.11
 ---
 
 ## Pakiety
 
 ```{r}
-install.packages("lsr")
+
 
 library(tidyverse) 
 library(readr)
 library(psych)
 library(dplyr)
 library(lsr)
+library(writexl)
+
+DF_SM_2 %>% 
+write_xlsx("baza.danych.SM.xlsx")
 
 ```
 
@@ -416,8 +420,6 @@ ggplot(ggplot_df, aes(x = wynik)) +
   ylab("Wynik testu przed prezentacją")
 
 ```
-
-ggplot(DF_SM_4, aes(x = D4, y = SUM_A)) + geom_boxplot() + theme_bw() + xlab("Wielkość miejsca zamieszkania") + ylab("Wynik testu przed prezentacją")
 
 ## Przygotowanie danych do testów: test t i modele liniowe
 
@@ -850,6 +852,10 @@ DF_SM_4 %>%
   summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
             min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
 
+DF_SM_4 %>% 
+  group_by(D8) %>% 
+  summarise(min_A = min(SUM_A), max_A = max(SUM_A), M_A = round(mean(SUM_A), 2),
+            min_B = min(SUM_B), max_B = max(SUM_B), M_B = round(mean(SUM_B), 2))
 
 ```
 
@@ -883,6 +889,11 @@ DF_SM_4 %>%
 
 DF_SM_4 %>% 
   group_by(D5) %>% 
+  summarise(min = min(wiedza), max = max(wiedza), M = round(mean(wiedza), 2))
+# D8
+
+DF_SM_4 %>% 
+  group_by(D8) %>% 
   summarise(min = min(wiedza), max = max(wiedza), M = round(mean(wiedza), 2))
 
 ```
@@ -1089,6 +1100,27 @@ ggplot(DF_SM_4, aes(x = SUM_B)) +
   xlab("Wynik testu po prezentacji")+
   ylab("Gęstość")
 
+#
+
+d_D8_tak<- density(D8_tak$SUM_A) 
+round(d_D8_tak$x[which.max(d_D8_tak$y)], 2) #8,53
+
+d_D8_tak<- density(D8_tak$SUM_B) 
+round(d_D8_tak$x[which.max(d_D8_tak$y)], 2) #13
+
+d_D8_nie<- density(D8_nie$SUM_A) 
+round(d_D8_nie$x[which.max(d_D8_nie$y)], 2) #0,33
+
+d_D8_nie<- density(D8_nie$SUM_B) 
+round(d_D8_nie$x[which.max(d_D8_nie$y)], 2) #13,02
+
+ggplot(DF_SM_4, aes(x = wiedza)) +
+  geom_density() +
+  facet_wrap(vars(D8)) +
+  theme_bw() + 
+  xlab("Przyrost wiedzy")+
+  ylab("Gęstość")
+
 ```
 
 #czesc 2 - dla przyrostu
@@ -1152,8 +1184,8 @@ round(d_18$x[which.max(d_18$y)], 2) #5,01
 
 ```
 
-
 #przyrost w podziale na wszystkie zmienne
+
 ```{r}
 #D4
 
@@ -1205,51 +1237,6 @@ ggplot(DF_SM_4, aes(x = wiedza)) +
   xlab("Przyrost wiedzy")+
   ylab("Gęstość")
 
-#D6 - czy słyszałeś kiedyś o SM
-
-D6_tak <- DF_SM_4 %>% 
-  filter(D6 == "Tak")
-
-d_D6_tak<- density(D6_tak$wiedza) 
-round(d_D6_tak$x[which.max(d_D6_tak$y)], 2) #4,64
-#
-D6_nie <-DF_SM_4 %>% 
-  filter(D6 == "Nie")
-
-d_D6_nie<- density(D6_nie$wiedza) 
-round(d_D6_nie$x[which.max(d_D6_nie$y)], 2) #11,82
-
-ggplot(DF_SM_4, aes(x = wiedza)) +
-  geom_density() +
-  facet_wrap(vars(D6)) +
-  theme_bw() + 
-  xlab("Przyrost wiedzy")+
-  ylab("Gęstość")
-
-#D7 - źródło wiedzy
-
-d_inne_D7<- density(inne$wiedza) 
-round(d_inne_D7$x[which.max(d_inne_D7$y)], 2) #8,06
-
-d_internet <- density(internet$wiedza) 
-round(d_internet$x[which.max(d_internet$y)], 2) #4,45
-
-d_rodzina<- density(rodzina$wiedza) 
-round(d_rodzina$x[which.max(d_rodzina$y)], 2) #4,52
-
-d_szkola <- density(szkola$wiedza) 
-round(d_szkola$x[which.max(d_szkola$y)], 2) #4,95
-
-d_znajomi <- density(znajomi$wiedza) 
-round(d_znajomi$x[which.max(d_znajomi$y)], 2) #4,53
-
-ggplot(D7, aes(x = wiedza)) +
-  geom_density() +
-  facet_wrap(vars(zrodlo)) +
-  theme_bw() + 
-  xlab("Przyrost wiedzy")+
-  ylab("Gęstość")
-
 #D8 - czy znasz kogoś chorującego na SM
 
 D8_tak <- DF_SM_4 %>% 
@@ -1271,5 +1258,309 @@ ggplot(DF_SM_4, aes(x = wiedza)) +
   xlab("Przyrost wiedzy")+
   ylab("Gęstość")
 
+max(table(D8_tak$wiedza))
 
+```
+
+# Domianta 2
+
+## przyrost
+
+```{r}
+sink("przyrost.txt")
+sort((table(DF_SM_4$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_plec_k.txt")
+sort((table(DF_3_K$wiedza)))
+sink()
+```
+
+```{r}
+sink("aaa.txt")
+sort((table(DF_3_M$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_14.txt")
+sort((table(d_14$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_15.txt")
+sort((table(d_15$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_16.txt")
+sort((table(d_16$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_17.txt")
+sort((table(d_17$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_18.txt")
+sort((table(d_18$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_A.txt")
+sort((table(dominanta_a$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_B.txt")
+sort((table(dominanta_b$wiedza)))
+sink()
+```
+
+```{r}
+sink("wprzyrost_C.txt")
+sort((table(dominanta_c$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_D.txt")
+sort((table(dominanta_d$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_biol.txt")
+sort((table(DF_3_Biol$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_inny.txt")
+sort((table(DF_3_Inny$wiedza)))
+sink()
+```
+
+```{r}
+
+d_D8_tak<-DF_SM_4 %>% 
+  filter(D8 == "tak")
+
+d_D8_nie<-DF_SM_4 %>% 
+  filter(D8 == "nie")
+```
+
+```{r}
+sink("przyrost_D8_tak.txt")
+sort((table(D8_tak$wiedza)))
+sink()
+```
+
+```{r}
+sink("przyrost_D8_nie.txt")
+sort((table(D8_nie$wiedza)))
+sink()
+```
+
+## SUM A i SUM B
+
+```{r}
+sink("wynik_przed_prezentacją.txt")
+sort((table(DF_SM_4$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji.txt")
+sort((table(DF_SM_4$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_plec_k.txt")
+sort((table(DF_3_K$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_plec_k.txt")
+sort((table(DF_3_K$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_plec_m.txt")
+sort((table(DF_3_M$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_plec_m.txt")
+sort((table(DF_3_M$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_14.txt")
+sort((table(d_14$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_15.txt")
+sort((table(d_15$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_16.txt")
+sort((table(d_16$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_17.txt")
+sort((table(d_17$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_18.txt")
+sort((table(d_18$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_14.txt")
+sort((table(d_14$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_15.txt")
+sort((table(d_15$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_16.txt")
+sort((table(d_16$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_17.txt")
+sort((table(d_17$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_18.txt")
+sort((table(d_18$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_A.txt")
+sort((table(dominanta_a$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_B.txt")
+sort((table(dominanta_b$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_C.txt")
+sort((table(dominanta_c$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_D.txt")
+sort((table(dominanta_d$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_A.txt")
+sort((table(dominanta_a$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_B.txt")
+sort((table(dominanta_b$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_C.txt")
+sort((table(dominanta_c$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_D.txt")
+sort((table(dominanta_d$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_biol.txt")
+sort((table(DF_3_Biol$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacją_inny.txt")
+sort((table(DF_3_Inny$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_biol.txt")
+sort((table(DF_3_Biol$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_inny.txt")
+sort((table(DF_3_Inny$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacja_D8_tak.txt")
+sort((table(D8_tak$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_przed_prezentacja_D8_nie.txt")
+sort((table(D8_nie$SUM_A)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_D8_tak.txt")
+sort((table(D8_tak$SUM_B)))
+sink()
+```
+
+```{r}
+sink("wynik_po_prezentacji_D8_nie.txt")
+sort((table(D8_nie$SUM_B)))
+sink()
 ```
